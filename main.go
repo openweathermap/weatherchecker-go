@@ -13,6 +13,22 @@ import (
         "github.com/skybon/weatherchecker-go/adapters"
         )
 
+type HistoryDataEntry struct {
+    Location LocationEntry
+    Source SourceEntry
+    Measurements adapters.MeasurementSchema
+}
+
+type HistoryEntry struct {
+    Time string
+    WType string
+    Data []HistoryDataEntry
+}
+
+type WeatherHistory struct {
+    Table []HistoryEntry
+}
+
 type Keyring struct {
     Key string
     Uref string
@@ -136,6 +152,7 @@ func main() {
     var locations = load_locations()
     var sources = create_sources()
     var proxy_table WeatherProxyTable
+    var history = WeatherHistory{}
 
     for il := 0 ; il < len(locations) ; il++ {
         for is := 0 ; is < len(sources) ; is ++ {
@@ -146,16 +163,21 @@ func main() {
 
     proxy_table.Refresh()
 
-    var dataset []map[string]float32
+    var dataset []HistoryDataEntry
 
     for ip := 0 ; ip < len(proxy_table.Table) ; ip++ {
         var proxy = proxy_table.Table[ip]
-        var data = make(map[string]float32)
-        data = adapters.Owm_adapt_weather(proxy.Data)
+        var measurement = adapters.Owm_adapt_weather(proxy.Data)
+        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurement}
+
         dataset = append(dataset, data)
         fmt.Println(proxy.Source.Name)
         fmt.Println(proxy.Location.City_name)
-        fmt.Println(dataset[ip])
+        fmt.Println(dataset[ip].Measurements)
         fmt.Println("---------------------")
     }
+
+    var history_entry = HistoryEntry {Data:dataset, Time:"0", WType:"current"}
+
+    history.Table = append(history.Table, history_entry)
 }

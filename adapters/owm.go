@@ -66,12 +66,9 @@ func decode (s string) WeatherHash {
     return data
 }
 
-func Owm_adapt_weather(json_string string) map[string]float32 {
+func Owm_adapt_weather(json_string string) MeasurementSchema {
     var data = decode(json_string)
-    var dataset = make(map[string]float32)
-    dataset["temp"] = float32(data.Main.Temp)
-    dataset["pressure"] = float32(data.Main.Pressure)
-    dataset["wind"] = float32(data.Wind.Speed)
+    var measurement = MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed}
 
-    return dataset
+    return measurement
 }
