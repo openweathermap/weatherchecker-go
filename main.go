@@ -17,21 +17,23 @@ import (
 type HistoryDataEntry struct {
     Location LocationEntry
     Source SourceEntry
-    Measurements adapters.MeasurementSchema
+    Measurements adapters.MeasurementArray
+    Raw string
 }
 
-func (h *WeatherHistory) AddHistoryEntry (proxy_table []WeatherProxy) {
+func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) {
     var dataset HistoryDataArray
 
-    for ip := 0 ; ip < len(proxy_table) ; ip++ {
-        var proxy = proxy_table[ip]
-        var measurement = adapters.Adapt_weather(proxy.Source.Name, "current", proxy.Data)
-        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurement}
+    for ip := 0 ; ip < len(proxyTable) ; ip++ {
+        var proxy = proxyTable[ip]
+        var raw = proxy.Data
+        var measurements = adapters.AdaptWeather(proxy.Source.Name, "current", raw)
+        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurements, Raw:raw}
 
         dataset = append(dataset, data)
     }
 
-    h.Table = append(h.Table, HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"})
+    this.Table = append(this.Table, HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"})
 }
 
 type HistoryDataArray []HistoryDataEntry
@@ -55,7 +57,7 @@ type Keyring struct {
 
 type SourceEntry struct {
     Name string
-    Url string
+    Urls map[string]string
     Keys Keyring
 }
 
@@ -82,24 +84,24 @@ type WeatherProxy struct {
     Data string
 }
 
-func (p *WeatherProxy) MakeUrl() {
-    var url_buf = new(bytes.Buffer)
+func (this *WeatherProxy) MakeUrl() {
+    var urlBuf = new(bytes.Buffer)
 
     var t = template.New("URL template")
-    t, _ = t.Parse(p.Source.Url)
-    t.Execute(url_buf, p)
+    t, _ = t.Parse(this.Source.Urls["current"])
+    t.Execute(urlBuf, this)
 
-    p.Url = url_buf.String()
+    this.Url = urlBuf.String()
 }
 
-func (p *WeatherProxy) Refresh() {
-    resp, err := http.Get(p.Url)
+func (this *WeatherProxy) Refresh() {
+    resp, err := http.Get(this.Url)
     if err != nil {
         fmt.Println(`Request finished with error`, err)
     } else {
         defer resp.Body.Close()
-        readall_contents, _ := ioutil.ReadAll(resp.Body)
-        p.Data = string(readall_contents)
+        readallContents, _ := ioutil.ReadAll(resp.Body)
+        this.Data = string(readallContents)
     }
 }
 
@@ -107,32 +109,32 @@ type WeatherProxyTable struct {
     Table []WeatherProxy
 }
 
-func (t *WeatherProxyTable) Refresh() {
-    for it := 0 ; it < len(t.Table) ; it ++ {
-        t.Table[it].Refresh()
+func (this *WeatherProxyTable) Refresh() {
+    for it := 0 ; it < len(this.Table) ; it ++ {
+        this.Table[it].Refresh()
     }
 }
 
-func (t *WeatherProxyTable) MakeTable(locations []LocationEntry, sources []SourceEntry) {
+func (this *WeatherProxyTable) MakeTable(locations []LocationEntry, sources []SourceEntry) {
     for il := 0 ; il < len(locations) ; il++ {
         for is := 0 ; is < len(sources) ; is ++ {
-            var proxy = make_proxy(sources[is], locations[il])
-            t.Table = append(t.Table, proxy)
+            var proxy = makeProxy(sources[is], locations[il])
+            this.Table = append(this.Table, proxy)
         }
     }
 }
 
-func make_proxy(source SourceEntry, location LocationEntry) WeatherProxy {
+func makeProxy(source SourceEntry, location LocationEntry) WeatherProxy {
     var proxy = WeatherProxy{Source:source, Location:location}
     proxy.MakeUrl()
 
     return proxy
 }
 
-func load_locations() []LocationEntry {
-    var location_table LocationTable
+func loadLocations() []LocationEntry {
+    var locationTable LocationTable
 
-    var toml_string = `[[locations]]
+    var tomlString = `[[locations]]
                        city_name = "Москва"
                        iso_country = "RU"
                        country_name = "Россия"
@@ -154,36 +156,47 @@ func load_locations() []LocationEntry {
                        gismeteo_id = "4079"
                        gismeteo_city_name = "sankt-peterburg"`
 
-    toml.Decode(toml_string, &location_table)
-    var locations = location_table.Locations
+    toml.Decode(tomlString, &locationTable)
+    var locations = locationTable.Locations
 
     return locations
 }
 
-func create_sources() []SourceEntry {
+func createSources() []SourceEntry {
     var sources []SourceEntry
     var keys Keyring
+    var urls map[string]string
     var entry SourceEntry
 
     keys = Keyring{Key:string(os.Getenv("OWM_KEY"))}
-    entry = SourceEntry{Name:"OpenWeatherMap", Url:`http://api.openweathermap.org/data/2.5/weather?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&units=metric`, Keys:keys}
+    urls = map[string]string {"current":`http://api.openweathermap.org/data/2.5/weather?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&units=metric`,
+                              "forecast":``}
+    entry = SourceEntry{Name:"OpenWeatherMap", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
     keys = Keyring{Key:string(os.Getenv("WUNDERGROUND_KEY"))}
-    entry = SourceEntry{Name:"Weather Underground", Url:`http://api.wunderground.com/api/{{.Source.Keys.Key}}/conditions/q/{{.Location.Latitude}},{{.Location.Longitude}}.json`, Keys:keys}
+    urls = map[string]string {"current": `http://api.wunderground.com/api/{{.Source.Keys.Key}}/conditions/q/{{.Location.Latitude}},{{.Location.Longitude}}.json`,
+                              "forecast": ``}
+    entry = SourceEntry{Name:"Weather Underground", Urls:urls, Keys:keys}
+    sources = append(sources, entry)
+
+    keys = Keyring{Key:string(os.Getenv("MYWEATHER2_KEY"))}
+    urls = map[string]string {"current": `http://www.myweather2.com/developer/forecast.ashx?uac={{.Source.Keys.Key}}&query={{.Location.Latitude}},{{.Location.Longitude}}&temp_unit=c&output=json&ws_unit=kph`,
+                              "forecast": ``}
+    entry = SourceEntry{Name:"MyWeather2", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
     return sources
 }
 
 func main() {
-    var locations = load_locations()
-    var sources = create_sources()
-    var proxy_table WeatherProxyTable
+    var locations = loadLocations()
+    var sources = createSources()
+    var proxyTable WeatherProxyTable
     var history = WeatherHistory{}
 
-    proxy_table.MakeTable(locations, sources)
-    proxy_table.Refresh()
+    proxyTable.MakeTable(locations, sources)
+    proxyTable.Refresh()
 
-    history.AddHistoryEntry(proxy_table.Table)
+    history.AddHistoryEntry(proxyTable.Table)
 }

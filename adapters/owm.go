@@ -58,24 +58,28 @@ type WeatherHash struct {
 }
 
 func decode (s string) WeatherHash {
-    var byte_string = []byte(s)
+    var byteString = []byte(s)
     var data = WeatherHash{}
 
-    json.Unmarshal(byte_string, &data)
+    json.Unmarshal(byteString, &data)
 
     return data
 }
 
-func Owm_adapt_current_weather(json_string string) MeasurementSchema {
-    var data = decode(json_string)
-    var measurement = MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed}
+func OwmAdaptCurrentWeather(jsonString string) MeasurementArray {
+    var data = decode(jsonString)
+    var measurements MeasurementArray
 
-    return measurement
+    measurements = append(measurements, MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed})
+
+    return measurements
 }
 
-func Owm_adapt_forecast_weather(json_string string) MeasurementSchema {
+func OwmAdaptForecastWeather(json_string string) MeasurementArray {
     var data = decode(json_string)
-    var measurement = MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed}
+    var measurements MeasurementArray
 
-    return measurement
+    measurements = append(measurements, MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed})
+
+    return measurements
 }

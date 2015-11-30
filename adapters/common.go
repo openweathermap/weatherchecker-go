@@ -8,16 +8,22 @@ type MeasurementSchema struct {
     Wind float32
 }
 
-func Adapt_weather(source_name string, wtype_name string, data string) MeasurementSchema {
-    var fnTable = make(map[string](map[string]func(string)MeasurementSchema))
+type MeasurementArray []MeasurementSchema
 
-    fnTable["OpenWeatherMap"] = make(map[string]func(string)MeasurementSchema)
-    fnTable["OpenWeatherMap"]["current"] = Owm_adapt_current_weather
-    fnTable["OpenWeatherMap"]["forecast"] = Owm_adapt_forecast_weather
+func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementArray {
+    var fnTable = make(map[string](map[string]func(string)MeasurementArray))
 
-    fnTable["Weather Underground"] = make(map[string]func(string)MeasurementSchema)
-    fnTable["Weather Underground"]["current"] = func(data string)MeasurementSchema {return MeasurementSchema{}}
-    fnTable["Weather Underground"]["forecast"] = func(data string)MeasurementSchema {return MeasurementSchema{}}
+    fnTable["OpenWeatherMap"] = make(map[string]func(string)MeasurementArray)
+    fnTable["OpenWeatherMap"]["current"] = OwmAdaptCurrentWeather
+    fnTable["OpenWeatherMap"]["forecast"] = OwmAdaptForecastWeather
 
-    return fnTable[source_name][wtype_name](data)
+    fnTable["Weather Underground"] = make(map[string]func(string)MeasurementArray)
+    fnTable["Weather Underground"]["current"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+    fnTable["Weather Underground"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+
+    fnTable["MyWeather2"] = make(map[string]func(string)MeasurementArray)
+    fnTable["MyWeather2"]["current"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+    fnTable["MyWeather2"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+
+    return fnTable[sourceName][wtypeName](data)
 }
