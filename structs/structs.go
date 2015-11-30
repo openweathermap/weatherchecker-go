@@ -21,7 +21,7 @@ type HistoryDataEntry struct {
     Raw string
 }
 
-func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) {
+func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryEntry {
     var dataset HistoryDataArray
 
     for ip := 0 ; ip < len(proxyTable) ; ip++ {
@@ -33,7 +33,11 @@ func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) {
         dataset = append(dataset, data)
     }
 
-    this.Table = append(this.Table, HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"})
+    newHistoryEntry := HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"}
+
+    this.Table = append(this.Table, newHistoryEntry)
+
+    return newHistoryEntry
 }
 
 type HistoryDataArray []HistoryDataEntry
