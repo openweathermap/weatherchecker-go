@@ -7,6 +7,7 @@ import (
         "net/http"
         "os"
         "text/template"
+        "time"
 
         "github.com/BurntSushi/toml"
 
@@ -19,14 +20,32 @@ type HistoryDataEntry struct {
     Measurements adapters.MeasurementSchema
 }
 
-type HistoryEntry struct {
-    Time string
-    WType string
-    Data []HistoryDataEntry
+func (h *WeatherHistory) AddHistoryEntry (proxy_table []WeatherProxy) {
+    var dataset HistoryDataArray
+
+    for ip := 0 ; ip < len(proxy_table) ; ip++ {
+        var proxy = proxy_table[ip]
+        var measurement = adapters.Adapt_weather(proxy.Source.Name, "current", proxy.Data)
+        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurement}
+
+        dataset = append(dataset, data)
+    }
+
+    h.Table = append(h.Table, HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"})
 }
 
+type HistoryDataArray []HistoryDataEntry
+
+type HistoryEntry struct {
+    EntryTime time.Time
+    WType string
+    Data HistoryDataArray
+}
+
+type HistoryArray []HistoryEntry
+
 type WeatherHistory struct {
-    Table []HistoryEntry
+    Table HistoryArray
 }
 
 type Keyring struct {
@@ -42,14 +61,14 @@ type SourceEntry struct {
 
 type LocationEntry struct {
     City_name string `toml:"city_name"`
-    Iso_country string
-    Country_name string
-    Latitude string
-    Longitude string
-    Accuweather_id string
-    Accuweather_city_name string
-    Gismeteo_id string
-    Gismeteo_city_name string
+    Iso_country string `toml:"iso_country"`
+    Country_name string `toml:"country_name"`
+    Latitude string `toml:"latitude"`
+    Longitude string `toml:"longitude"`
+    Accuweather_id string `toml:"accuweather_id"`
+    Accuweather_city_name string `toml:"accuweather_city_name"`
+    Gismeteo_id string `toml:"gismeteo_id"`
+    Gismeteo_city_name string `toml:"gismeteo_city_name"`
 }
 
 type LocationTable struct {
@@ -91,6 +110,15 @@ type WeatherProxyTable struct {
 func (t *WeatherProxyTable) Refresh() {
     for it := 0 ; it < len(t.Table) ; it ++ {
         t.Table[it].Refresh()
+    }
+}
+
+func (t *WeatherProxyTable) MakeTable(locations []LocationEntry, sources []SourceEntry) {
+    for il := 0 ; il < len(locations) ; il++ {
+        for is := 0 ; is < len(sources) ; is ++ {
+            var proxy = make_proxy(sources[is], locations[il])
+            t.Table = append(t.Table, proxy)
+        }
     }
 }
 
@@ -154,30 +182,8 @@ func main() {
     var proxy_table WeatherProxyTable
     var history = WeatherHistory{}
 
-    for il := 0 ; il < len(locations) ; il++ {
-        for is := 0 ; is < len(sources) ; is ++ {
-            var proxy = make_proxy(sources[is], locations[il])
-            proxy_table.Table = append(proxy_table.Table, proxy)
-        }
-    }
-
+    proxy_table.MakeTable(locations, sources)
     proxy_table.Refresh()
 
-    var dataset []HistoryDataEntry
-
-    for ip := 0 ; ip < len(proxy_table.Table) ; ip++ {
-        var proxy = proxy_table.Table[ip]
-        var measurement = adapters.Owm_adapt_weather(proxy.Data)
-        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurement}
-
-        dataset = append(dataset, data)
-        fmt.Println(proxy.Source.Name)
-        fmt.Println(proxy.Location.City_name)
-        fmt.Println(dataset[ip].Measurements)
-        fmt.Println("---------------------")
-    }
-
-    var history_entry = HistoryEntry {Data:dataset, Time:"0", WType:"current"}
-
-    history.Table = append(history.Table, history_entry)
+    history.AddHistoryEntry(proxy_table.Table)
 }

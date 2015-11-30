@@ -66,7 +66,14 @@ func decode (s string) WeatherHash {
     return data
 }
 
-func Owm_adapt_weather(json_string string) MeasurementSchema {
+func Owm_adapt_current_weather(json_string string) MeasurementSchema {
+    var data = decode(json_string)
+    var measurement = MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed}
+
+    return measurement
+}
+
+func Owm_adapt_forecast_weather(json_string string) MeasurementSchema {
     var data = decode(json_string)
     var measurement = MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed}
 
