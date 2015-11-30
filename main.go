@@ -24,8 +24,7 @@ func GetHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
-    RefreshProxies(c, w, r)
-
+    proxyTable.Refresh()
     historyEntry := history.AddHistoryEntry(proxyTable.Table)
     data, _ := json.Marshal(historyEntry)
     jsonString := string(data)
@@ -68,7 +67,7 @@ func main() {
     goji.Use(Api)
     goji.Get(DataEntrypoint + "/proxies", GetProxies)
     goji.Get(DataEntrypoint + "/history", GetHistory)
-    goji.Get(ActionEntrypoint + "/refresh", RefreshHistory)
+    goji.Get(ActionEntrypoint + "/refresh_history", RefreshHistory)
     goji.Get(ActionEntrypoint + "/refresh_proxies", RefreshProxies)
     goji.Serve()
 }
