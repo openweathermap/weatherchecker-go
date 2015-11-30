@@ -18,7 +18,7 @@ type HistoryDataEntry struct {
     Location LocationEntry
     Source SourceEntry
     Measurements adapters.MeasurementArray
-    Raw string
+    //Raw string
 }
 
 func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryEntry {
@@ -28,7 +28,8 @@ func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryE
         var proxy = proxyTable[ip]
         var raw = proxy.Data
         var measurements = adapters.AdaptWeather(proxy.Source.Name, "current", raw)
-        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurements, Raw:raw}
+        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurements}
+        //data.Raw = raw
 
         dataset = append(dataset, data)
     }
