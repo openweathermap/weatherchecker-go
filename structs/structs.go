@@ -31,6 +31,12 @@ type HistoryEntry struct {
     Data HistoryDataArray
 }
 
+func NewHistoryEntry (dataSet HistoryDataArray, entryTime time.Time, wType string) HistoryEntry {
+    var historyEntry = HistoryEntry {Data:dataSet, EntryTime: entryTime, WType:wType}
+
+    return historyEntry
+}
+
 type HistoryArray []HistoryEntry
 
 type WeatherHistory struct {
@@ -51,7 +57,7 @@ func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryE
         dataset = append(dataset, data)
     }
 
-    newHistoryEntry := HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"}
+    var newHistoryEntry = NewHistoryEntry(dataset, time.Now(), "current")
     this.Lock()
     this.Table = append(this.Table, newHistoryEntry)
     this.Unlock()
