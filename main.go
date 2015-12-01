@@ -8,7 +8,7 @@ import (
         "github.com/zenazn/goji"
         "github.com/zenazn/goji/web"
 
-        "github.com/skybon/weatherchecker-go/structs"
+        "github.com/owm-inc/weatherchecker-go/structs"
         )
 
 var proxyTable = structs.NewWeatherProxyTable(locations, sources)

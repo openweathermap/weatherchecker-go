@@ -11,7 +11,7 @@ import (
 
         "github.com/BurntSushi/toml"
 
-        "github.com/skybon/weatherchecker-go/adapters"
+        "github.com/owm-inc/weatherchecker-go/adapters"
         )
 
 type HistoryDataEntry struct {
