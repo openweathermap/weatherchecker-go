@@ -6,6 +6,7 @@ import (
         "io/ioutil"
         "net/http"
         "os"
+        "sync"
         "time"
         "text/template"
 
@@ -19,6 +20,22 @@ type HistoryDataEntry struct {
     Source SourceEntry
     Measurements adapters.MeasurementArray
     //Raw string
+}
+
+
+type HistoryDataArray []HistoryDataEntry
+
+type HistoryEntry struct {
+    EntryTime time.Time
+    WType string
+    Data HistoryDataArray
+}
+
+type HistoryArray []HistoryEntry
+
+type WeatherHistory struct {
+    sync.Mutex
+    Table HistoryArray
 }
 
 func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryEntry {
@@ -35,24 +52,17 @@ func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryE
     }
 
     newHistoryEntry := HistoryEntry {Data:dataset, EntryTime: time.Now(), WType:"current"}
-
+    this.Lock()
     this.Table = append(this.Table, newHistoryEntry)
+    this.Unlock()
 
     return newHistoryEntry
 }
 
-type HistoryDataArray []HistoryDataEntry
+func NewWeatherHistory () WeatherHistory {
+    var history = WeatherHistory {}
 
-type HistoryEntry struct {
-    EntryTime time.Time
-    WType string
-    Data HistoryDataArray
-}
-
-type HistoryArray []HistoryEntry
-
-type WeatherHistory struct {
-    Table HistoryArray
+    return history
 }
 
 type Keyring struct {
@@ -141,6 +151,7 @@ func LoadLocations() []LocationEntry {
 }
 
 type WeatherProxy struct {
+    sync.Mutex
     Source SourceEntry `json:"source"`
     Location LocationEntry `json:"location"`
     Data string `json:"data"`
@@ -157,12 +168,6 @@ func (this *WeatherProxy) MakeUrl() string {
     return urlString
 }
 
-func NewProxy(source SourceEntry, location LocationEntry) WeatherProxy {
-    proxy := WeatherProxy{Source:source, Location:location}
-
-    return proxy
-}
-
 func (this *WeatherProxy) Refresh() {
     url := this.MakeUrl()
     resp, err := http.Get(url)
@@ -171,19 +176,30 @@ func (this *WeatherProxy) Refresh() {
     } else {
         defer resp.Body.Close()
         readallContents, _ := ioutil.ReadAll(resp.Body)
+        this.Lock()
         this.Data = string(readallContents)
+        this.Unlock()
     }
 }
 
+func NewProxy(source SourceEntry, location LocationEntry) WeatherProxy {
+    proxy := WeatherProxy{Source:source, Location:location}
+
+    return proxy
+}
+
+
 type WeatherProxyTable struct {
+    sync.Mutex
     Table []WeatherProxy `json:"proxies"`
 }
 
-
 func (this *WeatherProxyTable) Refresh() {
+    this.Lock()
     for it := 0 ; it < len(this.Table) ; it ++ {
         this.Table[it].Refresh()
     }
+    this.Unlock()
 }
 
 func NewWeatherProxyTable(locations []LocationEntry, sources []SourceEntry) WeatherProxyTable {
