@@ -2,19 +2,26 @@ package main
 
 import (
         "encoding/json"
+        "flag"
         "fmt"
         "net/http"
+        "os"
 
         "github.com/zenazn/goji"
         "github.com/zenazn/goji/web"
 
+        "github.com/owm-inc/weatherchecker-go/db"
         "github.com/owm-inc/weatherchecker-go/structs"
         )
+
+var mongoDsn string
+
+var db_instance = db.Db()
 
 var proxyTable = structs.NewWeatherProxyTable(locations, sources)
 var locations = structs.LoadLocations()
 var sources = structs.CreateSources()
-var history = structs.NewWeatherHistory()
+var history = structs.NewWeatherHistory(db_instance)
 
 
 func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
@@ -28,7 +35,7 @@ func PrintProxies(w http.ResponseWriter) {
 }
 
 func PrintHistory(w http.ResponseWriter) {
-    MarshalPrintStuff(history, w)
+    MarshalPrintStuff(history.ShowFullHistory(), w)
 }
 
 func PrintHistoryEntry(historyEntry structs.HistoryEntry, w http.ResponseWriter) {
@@ -65,7 +72,25 @@ func Api(c *web.C, h http.Handler) http.Handler {
     return http.HandlerFunc(fn)
 }
 
+func init() {
+	flag.StringVar(&mongoDsn, "mongo", "mongodb://127.0.0.1:27017/weatherchecker", "MongoDB DSN")
+}
+
 func main() {
+    flag.Parse()
+
+	if os.Getenv("MONGO") != "" {
+		mongoDsn = os.Getenv("MONGO")
+	}
+
+    fmt.Println("Connecting to MongoDB at", mongoDsn)
+	err := db_instance.Connect(mongoDsn)
+	if err != nil {
+        fmt.Println(fmt.Sprintf("db error: %s", err))
+        return
+	}
+	defer db_instance.Disconnect()
+
     const ApiEntrypoint = "/api"
 
     const DataEntrypoint = ApiEntrypoint + "/data"

@@ -12,8 +12,10 @@ import (
 
         "github.com/BurntSushi/toml"
 
+        "github.com/owm-inc/weatherchecker-go/db"
         "github.com/owm-inc/weatherchecker-go/adapters"
         )
+
 
 type HistoryDataEntry struct {
     Location LocationEntry
@@ -40,8 +42,8 @@ func NewHistoryEntry (dataSet HistoryDataArray, entryTime time.Time, wType strin
 type HistoryArray []HistoryEntry
 
 type WeatherHistory struct {
-    sync.Mutex
-    Table HistoryArray
+    Database *db.MongoDb
+    Collection string
 }
 
 func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryEntry {
@@ -58,15 +60,19 @@ func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryE
     }
 
     var newHistoryEntry = NewHistoryEntry(dataset, time.Now(), "current")
-    this.Lock()
-    this.Table = append(this.Table, newHistoryEntry)
-    this.Unlock()
+    this.Database.Insert(this.Collection, newHistoryEntry)
 
     return newHistoryEntry
 }
 
-func NewWeatherHistory () WeatherHistory {
-    var history = WeatherHistory {}
+func (this *WeatherHistory) ShowFullHistory () []HistoryEntry {
+    var result []HistoryEntry
+    this.Database.FindAll(this.Collection, &result)
+    return result
+}
+
+func NewWeatherHistory (db_instance *db.MongoDb) WeatherHistory {
+    var history = WeatherHistory {Database:db_instance, Collection:"WeatherHistory"}
 
     return history
 }
