@@ -6,60 +6,74 @@ import (
         "io/ioutil"
         "net/http"
         "os"
-        "sync"
         "time"
         "text/template"
 
-        "github.com/BurntSushi/toml"
-
+        "gopkg.in/mgo.v2/bson"
         "github.com/owm-inc/weatherchecker-go/db"
         "github.com/owm-inc/weatherchecker-go/adapters"
         )
 
-
 type HistoryDataEntry struct {
+    Id bson.ObjectId `bson:"_id,omitempty" json:"objectid"`
     Location LocationEntry
     Source SourceEntry
     Measurements adapters.MeasurementArray
-    //Raw string
+    WType string
 }
 
+func NewHistoryDataEntry (location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string) HistoryDataEntry {
+    entry := HistoryDataEntry {Location:location, Source:source, Measurements:measurements, WType:wtype}
+    entry.Id = bson.NewObjectId()
 
-type HistoryDataArray []HistoryDataEntry
+    return entry
+}
+
+func GetDataEntry (location LocationEntry, source SourceEntry, wtype string) HistoryDataEntry {
+    url := makeUrl (source.Urls[wtype], UrlData {Source:source, Location:location})
+    raw := download (url)
+    measurements := adapters.AdaptWeather(source.Name, wtype, raw)
+    data := NewHistoryDataEntry(location, source, measurements, wtype)
+
+    return data
+}
 
 type HistoryEntry struct {
+    Id bson.ObjectId `bson:"_id,omitempty"`
     EntryTime time.Time
     WType string
-    Data HistoryDataArray
+    Data []HistoryDataEntry
 }
 
-func NewHistoryEntry (dataSet HistoryDataArray, entryTime time.Time, wType string) HistoryEntry {
-    var historyEntry = HistoryEntry {Data:dataSet, EntryTime: entryTime, WType:wType}
+func NewHistoryEntry (dataset []HistoryDataEntry, entryTime time.Time, wType string) HistoryEntry {
+    var historyEntry = HistoryEntry {Data:dataset, EntryTime: entryTime, WType:wType}
 
     return historyEntry
 }
-
-type HistoryArray []HistoryEntry
 
 type WeatherHistory struct {
     Database *db.MongoDb
     Collection string
 }
 
-func (this *WeatherHistory) AddHistoryEntry (proxyTable []WeatherProxy) HistoryEntry {
-    var dataset HistoryDataArray
+func (this *WeatherHistory) AddHistoryEntry (locations []LocationEntry, sources []SourceEntry, wtypes []string) HistoryEntry {
+    var dataset []HistoryDataEntry
 
-    for ip := 0 ; ip < len(proxyTable) ; ip++ {
-        var proxy = proxyTable[ip]
-        var raw = proxy.Data
-        var measurements = adapters.AdaptWeather(proxy.Source.Name, "current", raw)
-        var data = HistoryDataEntry {Source:proxy.Source, Location:proxy.Location, Measurements:measurements}
-        //data.Raw = raw
+    for il := 0 ; il < len(locations) ; il ++ {
+        location := locations[il]
+        for is := 0 ; is < len(sources) ; is++ {
+            source := sources[is]
+            for it := 0 ; it < len(wtypes) ; it ++ {
+                wtype := wtypes[it]
 
-        dataset = append(dataset, data)
+                data := GetDataEntry(location, source, wtype)
+
+                dataset = append(dataset, data)
+            }
+        }
     }
 
-    var newHistoryEntry = NewHistoryEntry(dataset, time.Now(), "current")
+    newHistoryEntry := NewHistoryEntry(dataset, time.Now(), "current")
     this.Database.Insert(this.Collection, newHistoryEntry)
 
     return newHistoryEntry
@@ -115,7 +129,9 @@ func CreateSources() []SourceEntry {
     return sources
 }
 
+
 type LocationEntry struct {
+    Id bson.ObjectId `bson:"_id,omitempty" json:"objectid"`
     City_name string `json:"city_name"`
     Iso_country string `json:"iso_country"`
     Country_name string `json:"country_name"`
@@ -127,101 +143,63 @@ type LocationEntry struct {
     Gismeteo_city_name string `json:"gismeteo_city_name"`
 }
 
-type LocationTable struct {
-    Locations []LocationEntry `json:"locations"`
+func NewLocationEntry (city_name string, iso_country string, country_name string, latitude string, longitude string, accuweather_id string, accuweather_city_name string, gismeteo_id string, gismeteo_city_name string) LocationEntry {
+    model := LocationEntry {City_name:city_name, Iso_country:iso_country, Country_name:country_name, Latitude:latitude, Longitude:longitude, Accuweather_id:accuweather_id, Accuweather_city_name:accuweather_city_name,Gismeteo_id:gismeteo_id, Gismeteo_city_name:gismeteo_city_name}
+    model.Id = bson.NewObjectId()
+
+    return model
 }
 
-func LoadLocations() []LocationEntry {
-    var locationTable LocationTable
+type LocationTable struct {
+    Database *db.MongoDb
+    Collection string
+}
 
-    var tomlString = `[[locations]]
-                       city_name = "Москва"
-                       iso_country = "RU"
-                       country_name = "Россия"
-                       latitude = "55.75"
-                       longitude = "37.62"
-                       accuweather_id = "294021"
-                       accuweather_city_name = "moscow"
-                       gismeteo_id = "4368"
-                       gismeteo_city_name = "moscow"
+func (this *LocationTable) AddLocation (city_name string, iso_country string, country_name string, latitude string, longitude string, accuweather_id string, accuweather_city_name string, gismeteo_id string, gismeteo_city_name string) LocationEntry {
+    newLocationEntry := NewLocationEntry (city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
+    this.Database.Insert(this.Collection, newLocationEntry)
 
-                       [[locations]]
-                       city_name = "Санкт-Петербург"
-                       iso_country = "RU"
-                       country_name = "Россия"
-                       latitude = "59.95"
-                       longitude = "30.3"
-                       accuweather_id = "295212"
-                       accuweather_city_name = "saint-petersburg"
-                       gismeteo_id = "4079"
-                       gismeteo_city_name = "sankt-peterburg"`
+    return newLocationEntry
+}
 
-    toml.Decode(tomlString, &locationTable)
-    var locations = locationTable.Locations
+func (this *LocationTable) RetrieveLocations () []LocationEntry {
+    var result []LocationEntry
+    this.Database.FindAll(this.Collection, &result)
+    return result
+}
+
+func NewLocationTable (db_instance *db.MongoDb) LocationTable {
+    var locations = LocationTable {Database:db_instance, Collection:"Locations"}
 
     return locations
 }
 
-type WeatherProxy struct {
-    sync.Mutex
-    Source SourceEntry `json:"source"`
-    Location LocationEntry `json:"location"`
-    Data string `json:"data"`
+type UrlData struct {
+    Source SourceEntry
+    Location LocationEntry
 }
 
-func (this *WeatherProxy) MakeUrl() string {
+func makeUrl(url_template string, data UrlData) string {
     var urlBuf = new(bytes.Buffer)
 
     var t = template.New("URL template")
-    t, _ = t.Parse(this.Source.Urls["current"])
-    t.Execute(urlBuf, this)
+    t, _ = t.Parse(url_template)
+    t.Execute(urlBuf, data)
 
     urlString := urlBuf.String()
     return urlString
 }
 
-func (this *WeatherProxy) Refresh() {
-    url := this.MakeUrl()
+func download(url string) string {
     resp, err := http.Get(url)
+    var data string
     if err != nil {
         fmt.Println(`Request finished with error`, err)
+        data = ``
     } else {
         defer resp.Body.Close()
         readallContents, _ := ioutil.ReadAll(resp.Body)
-        this.Lock()
-        this.Data = string(readallContents)
-        this.Unlock()
+        data = string(readallContents)
     }
-}
-
-func NewProxy(source SourceEntry, location LocationEntry) WeatherProxy {
-    proxy := WeatherProxy{Source:source, Location:location}
-
-    return proxy
-}
-
-
-type WeatherProxyTable struct {
-    sync.Mutex
-    Table []WeatherProxy `json:"proxies"`
-}
-
-func (this *WeatherProxyTable) Refresh() {
-    this.Lock()
-    for it := 0 ; it < len(this.Table) ; it ++ {
-        this.Table[it].Refresh()
-    }
-    this.Unlock()
-}
-
-func NewWeatherProxyTable(locations []LocationEntry, sources []SourceEntry) WeatherProxyTable {
-    var newProxyTable WeatherProxyTable
-    for il := 0 ; il < len(locations) ; il++ {
-        for is := 0 ; is < len(sources) ; is ++ {
-            var proxy = NewProxy(sources[is], locations[il])
-            newProxyTable.Table = append(newProxyTable.Table, proxy)
-        }
-    }
-
-    return newProxyTable
+    return data
 }
