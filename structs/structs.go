@@ -59,13 +59,9 @@ type WeatherHistory struct {
 func (this *WeatherHistory) AddHistoryEntry (locations []LocationEntry, sources []SourceEntry, wtypes []string) HistoryEntry {
     var dataset []HistoryDataEntry
 
-    for il := 0 ; il < len(locations) ; il ++ {
-        location := locations[il]
-        for is := 0 ; is < len(sources) ; is++ {
-            source := sources[is]
-            for it := 0 ; it < len(wtypes) ; it ++ {
-                wtype := wtypes[it]
-
+    for _, location := range locations {
+        for _, source := range sources {
+            for _, wtype := range wtypes {
                 data := GetDataEntry(location, source, wtype)
 
                 dataset = append(dataset, data)
