@@ -20,10 +20,11 @@ type HistoryDataEntry struct {
     Source SourceEntry
     Measurements adapters.MeasurementArray
     WType string
+    Url string
 }
 
-func NewHistoryDataEntry (location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string) HistoryDataEntry {
-    entry := HistoryDataEntry {Location:location, Source:source, Measurements:measurements, WType:wtype}
+func NewHistoryDataEntry (location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string, url string) HistoryDataEntry {
+    entry := HistoryDataEntry {Location:location, Source:source, Measurements:measurements, WType:wtype, Url:url}
     entry.Id = bson.NewObjectId()
 
     return entry
@@ -33,7 +34,7 @@ func GetDataEntry (location LocationEntry, source SourceEntry, wtype string) His
     url := makeUrl (source.Urls[wtype], UrlData {Source:source, Location:location})
     raw := download (url)
     measurements := adapters.AdaptWeather(source.Name, wtype, raw)
-    data := NewHistoryDataEntry(location, source, measurements, wtype)
+    data := NewHistoryDataEntry(location, source, measurements, wtype, url)
 
     return data
 }
@@ -162,6 +163,12 @@ func (this *LocationTable) RetrieveLocations () []LocationEntry {
     var result []LocationEntry
     this.Database.FindAll(this.Collection, &result)
     return result
+}
+
+func (this *LocationTable) RemoveLocation (location_id bson.ObjectId) error {
+    err := this.Database.Remove(this.Collection, location_id)
+
+    return err
 }
 
 func NewLocationTable (db_instance *db.MongoDb) LocationTable {

@@ -47,11 +47,18 @@ func (db *MongoDb) FindAll(coll string, v interface{}) error {
 	return sess.DB("").C(coll).Find(bson.M{}).All(v)
 }
 
-func (db *MongoDb) Update(coll string, id, v interface{}) error {
+func (db *MongoDb) Update(coll string, id interface{}, v interface{}) error {
 	sess := db.sess.Copy()
 	defer sess.Close()
 
 	return sess.DB("").C(coll).Update(bson.M{"_id": id}, bson.M{"$set": v})
+}
+
+func (db *MongoDb) Remove(coll string, id interface{}/*, v interface{}*/) error {
+	sess := db.sess.Copy()
+	defer sess.Close()
+
+	return sess.DB("").C(coll).Remove(bson.M{"_id": id}/*, bson.M{"$set": v}*/)
 }
 
 var db *MongoDb = &MongoDb{}
