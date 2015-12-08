@@ -10,20 +10,30 @@ type MeasurementSchema struct {
 
 type MeasurementArray []MeasurementSchema
 
+func AdaptStub (s string) MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+
 func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementArray {
+    var adaptFunc func(string)MeasurementArray
     var fnTable = make(map[string](map[string]func(string)MeasurementArray))
 
     fnTable["OpenWeatherMap"] = make(map[string]func(string)MeasurementArray)
     fnTable["OpenWeatherMap"]["current"] = OwmAdaptCurrentWeather
-    fnTable["OpenWeatherMap"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
 
     fnTable["Weather Underground"] = make(map[string]func(string)MeasurementArray)
     fnTable["Weather Underground"]["current"] = WundergroundAdaptCurrentWeather
-    fnTable["Weather Underground"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
 
     fnTable["MyWeather2"] = make(map[string]func(string)MeasurementArray)
     fnTable["MyWeather2"]["current"] = Myweather2AdaptCurrentWeather
-    fnTable["MyWeather2"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
 
-    return fnTable[sourceName][wtypeName](data)
+    adaptFunc = AdaptStub
+
+    _, p_ok := fnTable[sourceName]
+    if p_ok == true {
+        storedFunc, f_ok := fnTable[sourceName][wtypeName]
+        if f_ok == true {
+            adaptFunc = storedFunc
+        }
+    }
+
+    return adaptFunc(data)
 }
