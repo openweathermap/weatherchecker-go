@@ -123,6 +123,12 @@ func CreateSources() []SourceEntry {
     entry = SourceEntry{Name:"MyWeather2", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
+    keys = Keyring{}
+    urls = map[string]string {"current": `http://www.accuweather.com/ru/{{.Location.Iso_country}}/{{.Location.Accuweather_city_name}}/{{.Location.Accuweather_id}}/hourly-weather-forecast/{{.Location.Accuweather_id}}`,
+                              "forecast": ``}
+    entry = SourceEntry{Name:"AccuWeather", Urls:urls, Keys:keys}
+    sources = append(sources, entry)
+
     return sources
 }
 

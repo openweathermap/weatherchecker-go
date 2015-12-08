@@ -25,6 +25,9 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
     fnTable["MyWeather2"] = make(map[string]func(string)MeasurementArray)
     fnTable["MyWeather2"]["current"] = Myweather2AdaptCurrentWeather
 
+    fnTable["AccuWeather"] = make(map[string]func(string)MeasurementArray)
+    fnTable["AccuWeather"]["current"] = AccuweatherAdaptCurrentWeather
+
     adaptFunc = AdaptStub
 
     _, p_ok := fnTable[sourceName]
