@@ -117,7 +117,7 @@ func CreateSources() []SourceEntry {
     entry = SourceEntry{Name:"Weather Underground", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
-    keys = Keyring{Key:string(os.Getenv("MYWEATHER2_KEY"))}
+    keys = Keyring{Key:string(os.Getenv("MYWEATHER2_KEY")), Uref:string(os.Getenv("MYWEATHER2_UREF"))}
     urls = map[string]string {"current": `http://www.myweather2.com/developer/forecast.ashx?uac={{.Source.Keys.Key}}&query={{.Location.Latitude}},{{.Location.Longitude}}&temp_unit=c&output=json&ws_unit=kph`,
                               "forecast": ``}
     entry = SourceEntry{Name:"MyWeather2", Urls:urls, Keys:keys}
