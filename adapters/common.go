@@ -18,7 +18,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
     fnTable["OpenWeatherMap"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
 
     fnTable["Weather Underground"] = make(map[string]func(string)MeasurementArray)
-    fnTable["Weather Underground"]["current"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+    fnTable["Weather Underground"]["current"] = WundergroundAdaptCurrentWeather
     fnTable["Weather Underground"]["forecast"] = func(data string)MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
 
     fnTable["MyWeather2"] = make(map[string]func(string)MeasurementArray)
