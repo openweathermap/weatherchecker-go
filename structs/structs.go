@@ -105,19 +105,19 @@ func CreateSources() []SourceEntry {
     var urls map[string]string
     var entry SourceEntry
 
-    keys = Keyring{Key:string(os.Getenv("OWM_KEY"))}
+    keys = Keyring{Key:os.Getenv("OWM_KEY")}
     urls = map[string]string {"current":`http://api.openweathermap.org/data/2.5/weather?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&units=metric`,
                               "forecast":``}
     entry = SourceEntry{Name:"OpenWeatherMap", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
-    keys = Keyring{Key:string(os.Getenv("WUNDERGROUND_KEY"))}
+    keys = Keyring{Key:os.Getenv("WUNDERGROUND_KEY")}
     urls = map[string]string {"current": `http://api.wunderground.com/api/{{.Source.Keys.Key}}/conditions/q/{{.Location.Latitude}},{{.Location.Longitude}}.json`,
                               "forecast": ``}
     entry = SourceEntry{Name:"Weather Underground", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
-    keys = Keyring{Key:string(os.Getenv("MYWEATHER2_KEY")), Uref:string(os.Getenv("MYWEATHER2_UREF"))}
+    keys = Keyring{Key:os.Getenv("MYWEATHER2_KEY"), Uref:os.Getenv("MYWEATHER2_UREF")}
     urls = map[string]string {"current": `http://www.myweather2.com/developer/forecast.ashx?uac={{.Source.Keys.Key}}&query={{.Location.Latitude}},{{.Location.Longitude}}&temp_unit=c&output=json&ws_unit=kph`,
                               "forecast": ``}
     entry = SourceEntry{Name:"MyWeather2", Urls:urls, Keys:keys}
