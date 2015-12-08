@@ -46,15 +46,15 @@ type WundergroundCurrentObservationStruct struct {
     LocalTzOffset string                            `json:"local_tz_offset"`
     Weather string                                  `json:"weather"`
     TemperatureString string                        `json:"temperature_string"`
-    TempF float32                                   `json:"temp_f"`
-    TempC float32                                   `json:"temp_c"`
+    TempF float64                                   `json:"temp_f"`
+    TempC float64                                   `json:"temp_c"`
     RelativeHumidity string                         `json:"relative_humidity"`
     WindString string                               `json:"wind_string"`
     WindDir string                                  `json:"wind_dir"`
     WindDegrees int                                 `json:"wind_degrees"`
-    WindMph float32                                 `json:"wind_mph"`
+    WindMph float64                                 `json:"wind_mph"`
     WindGustMph string                              `json:"wind_gust_mph"`
-    WindKph float32                                 `json:"wind_kph"`
+    WindKph float64                                 `json:"wind_kph"`
     WindGustKph string                              `json:"wind_gust_kph"`
     PressureMb string                               `json:"pressure_mb"`
     PressureIn string                               `json:"pressure_in"`
@@ -112,15 +112,11 @@ func WundergroundAdaptCurrentWeather(jsonString string) MeasurementArray {
     temp_raw := data.CurrentObservation.TempC
     wind_raw := data.CurrentObservation.WindKph
 
-    humidityF64, _ := strconv.ParseFloat(humidity_raw, 32)
-    pressureF64, _ := strconv.ParseFloat(pressure_raw, 32)
-    precipitationF64, _ := strconv.ParseFloat(precipitation_raw, 32)
-
-    pressure := float32(pressureF64)
-    humidity := float32(humidityF64)
-    precipitation := float32(precipitationF64)
-    temp := float32(temp_raw)
-    wind := float32(wind_raw)
+    humidity, _ := strconv.ParseFloat(humidity_raw, 32)
+    pressure, _ := strconv.ParseFloat(pressure_raw, 32)
+    precipitation, _ := strconv.ParseFloat(precipitation_raw, 32)
+    temp := float64(temp_raw)
+    wind := float64(wind_raw)
 
     measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
 

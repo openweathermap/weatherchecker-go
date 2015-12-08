@@ -43,17 +43,12 @@ func Myweather2AdaptCurrentWeather(jsonString string) MeasurementArray {
     temp_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Temp)
     wind_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Wind[0].Speed)
 
-    humidityF64, _ := strconv.ParseFloat(humidity_raw, 32)
-    pressureF64, _ := strconv.ParseFloat(pressure_raw, 32)
-    tempF64, _ := strconv.ParseFloat(temp_raw, 32)
-    windF64, _ := strconv.ParseFloat(wind_raw, 32)
+    humidity, _ := strconv.ParseFloat(humidity_raw, 64)
+    pressure, _ := strconv.ParseFloat(pressure_raw, 64)
+    temp, _ := strconv.ParseFloat(temp_raw, 64)
+    wind, _ := strconv.ParseFloat(wind_raw, 64)
 
-    pressure := float32(pressureF64)
-    humidity := float32(humidityF64)
-    temp := float32(tempF64)
-    wind := float32(windF64)
-
-    precipitation := float32(0)
+    precipitation := float64(0)
 
     measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
 

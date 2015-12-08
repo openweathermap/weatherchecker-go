@@ -5,14 +5,14 @@ import (
         )
 
 type LocationCoords struct {
-    Longitude float32 `json:"lon"`
-    Latitude float32 `json:"lat"`
+    Longitude float64 `json:"lon"`
+    Latitude float64 `json:"lat"`
 }
 
 type SystemInfo struct {
     Type int `json:"type"`
     Id int `json:"id"`
-    Message float32 `json:"message"`
+    Message float64 `json:"message"`
     Country string `json:"country"`
     Sunrise int `json:"sunrise"`
     Sunset int `json:"sunset"`
@@ -26,16 +26,16 @@ type WeatherInfo struct {
 }
 
 type MainInfo struct {
-    Temp float32 `json:"temp"`
-    Pressure float32 `json:"pressure"`
+    Temp float64 `json:"temp"`
+    Pressure float64 `json:"pressure"`
     Humidity int `json:"humidity"`
-    TempMin float32 `json:"temp_min"`
-    TempMax float32 `json:"temp_max"`
+    TempMin float64 `json:"temp_min"`
+    TempMax float64 `json:"temp_max"`
 }
 
 type WindInfo struct {
-    Speed float32 `json:"speed"`
-    Degree float32 `json:"deg"`
+    Speed float64 `json:"speed"`
+    Degree float64 `json:"deg"`
 }
 
 type CloudInfo struct {
@@ -70,7 +70,13 @@ func OwmAdaptCurrentWeather(jsonString string) MeasurementArray {
     var data = owmDecode(jsonString)
     var measurements MeasurementArray
 
-    measurements = append(measurements, MeasurementSchema{Temp:data.Main.Temp, Pressure:data.Main.Pressure, Wind:data.Wind.Speed})
+    temp := float64(data.Main.Temp)
+    pressure := float64(data.Main.Pressure)
+    wind := float64(data.Wind.Speed)
+    humidity := float64(0)
+    precipitation := float64(0)
+
+    measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
 
     return measurements
 }
