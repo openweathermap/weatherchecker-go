@@ -64,3 +64,9 @@ func (db *MongoDb) Remove(coll string, id interface{}/*, v interface{}*/) error 
 var db *MongoDb = &MongoDb{}
 
 func Db() *MongoDb { return db }
+
+func GetObjectIDFromString (s string) (bson.ObjectId, error) {
+	b := bson.NewObjectId()
+    err := b.UnmarshalJSON([]byte(`"` + s + `"`))
+    return b, err
+}

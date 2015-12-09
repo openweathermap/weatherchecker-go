@@ -71,13 +71,38 @@ func AddLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 
     if len(missing) > 0 {
         err_msg := make(map[string]string)
-        err_msg["Status"] = "500"
-        err_msg["Message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
+        err_msg["status"] = "500"
+        err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
         MarshalPrintStuff(err_msg, w)
     } else {
         locationEntry := locations.AddLocation (city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
         PrintLocationEntry(locationEntry, w)
     }
+}
+
+func RemoveLocation(c web.C, w http.ResponseWriter, r *http.Request) {
+    err_msg := make(map[string]string)
+    missing := make([]string, 0)
+
+    query_holder := r.URL.Query()
+
+    location_id := query_holder.Get("location_id") ; if location_id == "" {missing = append(missing, "location_id")}
+
+    if len(missing) > 0 {
+        err_msg["status"] = "500"
+        err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
+    } else {
+        err := locations.RemoveLocation (location_id)
+        if err != nil {
+            err_msg["status"] = "500"
+            err_msg["message"] = err.Error()
+        } else {
+            err_msg["status"] = "200"
+            err_msg["message"] = "Location removed successfully"
+        }
+    }
+
+    MarshalPrintStuff(err_msg, w)
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -116,15 +141,18 @@ func main() {
 	}
 	defer db_instance.Disconnect()
 
-    const ApiEntrypoint = "/api"
+    const ApiVer = "0.1"
 
-    const DataEntrypoint = ApiEntrypoint + "/data"
-    const ActionEntrypoint = ApiEntrypoint + "/actions"
+    const ApiEntrypoint = "/api" + "/" + ApiVer
+
+    const LocationEntrypoint = ApiEntrypoint + "/locations"
+    const HistoryEntrypoint = ApiEntrypoint + "/history"
 
     goji.Use(Api)
-    goji.Get(DataEntrypoint + "/locations", GetLocations)
-    goji.Get(DataEntrypoint + "/history", GetHistory)
-    goji.Get(ActionEntrypoint + "/add_location", AddLocation)
-    goji.Get(ActionEntrypoint + "/refresh_history", RefreshHistory)
+    goji.Get(LocationEntrypoint, GetLocations)
+    goji.Get(LocationEntrypoint + "/add", AddLocation)
+    goji.Get(LocationEntrypoint + "/remove", RemoveLocation)
+    goji.Get(HistoryEntrypoint, GetHistory)
+    goji.Get(HistoryEntrypoint + "/refresh", RefreshHistory)
     goji.Serve()
 }
