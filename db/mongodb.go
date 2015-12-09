@@ -54,11 +54,22 @@ func (db *MongoDb) Update(coll string, id interface{}, v interface{}) error {
 	return sess.DB("").C(coll).Update(bson.M{"_id": id}, bson.M{"$set": v})
 }
 
-func (db *MongoDb) Remove(coll string, id interface{}/*, v interface{}*/) error {
+func (db *MongoDb) Remove(coll string, id interface{}) error {
 	sess := db.sess.Copy()
 	defer sess.Close()
 
-	return sess.DB("").C(coll).Remove(bson.M{"_id": id}/*, bson.M{"$set": v}*/)
+	_, err := sess.DB("").C(coll).RemoveAll(bson.M{"_id": id})
+
+	return err
+}
+
+func (db *MongoDb) RemoveAll(coll string) error {
+	sess := db.sess.Copy()
+	defer sess.Close()
+
+	_, err := sess.DB("").C(coll).RemoveAll(bson.M{})
+
+	return err
 }
 
 var db *MongoDb = &MongoDb{}

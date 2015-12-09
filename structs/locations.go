@@ -57,6 +57,10 @@ func (this *LocationTable) RemoveLocation (location_id string) error {
     return err
 }
 
+func (this *LocationTable) Clear() error {
+    return this.Database.RemoveAll(this.Collection)
+}
+
 func NewLocationTable (db_instance *db.MongoDb) LocationTable {
     var locations = LocationTable {Database:db_instance, Collection:"Locations"}
 

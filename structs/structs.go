@@ -83,6 +83,12 @@ func (this *WeatherHistory) ShowFullHistory () []HistoryEntry {
     return result
 }
 
+func (this *WeatherHistory) Clear() error {
+    err := this.Database.RemoveAll(this.Collection)
+
+    return err
+}
+
 func NewWeatherHistory (db_instance *db.MongoDb) WeatherHistory {
     var history = WeatherHistory {Database:db_instance, Collection:"WeatherHistory"}
 

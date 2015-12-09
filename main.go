@@ -46,6 +46,19 @@ func PrintLocations(w http.ResponseWriter) {
     MarshalPrintStuff(locations.RetrieveLocations(), w)
 }
 
+func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
+    err_msg := make(map[string]string)
+    if err != nil {
+        err_msg["status"] = "500"
+        err_msg["message"] = err.Error()
+    } else {
+        err_msg["status"] = "200"
+        err_msg["message"] = successMessage
+    }
+
+    MarshalPrintStuff(err_msg, w)
+}
+
 func GetHistory(c web.C, w http.ResponseWriter, r *http.Request) {
     PrintHistory(w)
 }
@@ -81,7 +94,6 @@ func AddLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveLocation(c web.C, w http.ResponseWriter, r *http.Request) {
-    err_msg := make(map[string]string)
     missing := make([]string, 0)
 
     query_holder := r.URL.Query()
@@ -89,20 +101,20 @@ func RemoveLocation(c web.C, w http.ResponseWriter, r *http.Request) {
     location_id := query_holder.Get("location_id") ; if location_id == "" {missing = append(missing, "location_id")}
 
     if len(missing) > 0 {
+        err_msg := make(map[string]string)
         err_msg["status"] = "500"
         err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
+        MarshalPrintStuff(err_msg, w)
     } else {
         err := locations.RemoveLocation (location_id)
-        if err != nil {
-            err_msg["status"] = "500"
-            err_msg["message"] = err.Error()
-        } else {
-            err_msg["status"] = "200"
-            err_msg["message"] = "Location removed successfully"
-        }
+        PrintStatus(err, "Location removed successfully.", w)
     }
+}
 
-    MarshalPrintStuff(err_msg, w)
+func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
+    err := locations.Clear()
+
+    PrintStatus(err, "Locations cleared successfully.", w)
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -110,6 +122,12 @@ func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
     locations_query := locations.RetrieveLocations()
     historyEntry := history.AddHistoryEntry(locations_query, sources, wtypes)
     PrintHistoryEntry(historyEntry, w)
+}
+
+func ClearHistory(c web.C, w http.ResponseWriter, r *http.Request) {
+    err := history.Clear()
+
+    PrintStatus(err, "History cleared successfully.", w)
 }
 
 func Api(c *web.C, h http.Handler) http.Handler {
@@ -152,7 +170,9 @@ func main() {
     goji.Get(LocationEntrypoint, GetLocations)
     goji.Get(LocationEntrypoint + "/add", AddLocation)
     goji.Get(LocationEntrypoint + "/remove", RemoveLocation)
+    goji.Get(LocationEntrypoint + "/clear", ClearLocations)
     goji.Get(HistoryEntrypoint, GetHistory)
     goji.Get(HistoryEntrypoint + "/refresh", RefreshHistory)
+    goji.Get(HistoryEntrypoint + "/clear", ClearHistory)
     goji.Serve()
 }
