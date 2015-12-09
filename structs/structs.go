@@ -16,11 +16,11 @@ import (
 
 type HistoryDataEntry struct {
     Id bson.ObjectId `bson:"_id,omitempty" json:"objectid"`
-    Location LocationEntry
-    Source SourceEntry
-    Measurements adapters.MeasurementArray
-    WType string
-    Url string
+    Location LocationEntry `json:"location"`
+    Source SourceEntry `json:"source"`
+    Measurements adapters.MeasurementArray `json:"measurements"`
+    WType string `json:"wtype"`
+    Url string `json:"url"`
 }
 
 func NewHistoryDataEntry (location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string, url string) HistoryDataEntry {
@@ -40,16 +40,17 @@ func GetDataEntry (location LocationEntry, source SourceEntry, wtype string) His
 }
 
 type HistoryEntry struct {
-    Id bson.ObjectId `bson:"_id,omitempty"`
-    EntryTime time.Time
-    WType string
-    Data []HistoryDataEntry
+    Id bson.ObjectId `bson:"_id,omitempty" json:"objectid"`
+    EntryTime time.Time `json:"entry_time"`
+    WType string `json:"wtype"`
+    Data []HistoryDataEntry `json:"data"`
 }
 
 func NewHistoryEntry (dataset []HistoryDataEntry, entryTime time.Time, wType string) HistoryEntry {
-    var historyEntry = HistoryEntry {Data:dataset, EntryTime: entryTime, WType:wType}
+    entry := HistoryEntry {Data:dataset, EntryTime: entryTime, WType:wType}
+    entry.Id = bson.NewObjectId()
 
-    return historyEntry
+    return entry
 }
 
 type WeatherHistory struct {
