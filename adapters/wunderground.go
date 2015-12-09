@@ -53,15 +53,15 @@ type WundergroundCurrentObservationStruct struct {
     WindDir string                                  `json:"wind_dir"`
     WindDegrees int                                 `json:"wind_degrees"`
     WindMph float64                                 `json:"wind_mph"`
-    WindGustMph string                              `json:"wind_gust_mph"`
+    WindGustMph float64                             `json:"wind_gust_mph"`
     WindKph float64                                 `json:"wind_kph"`
-    WindGustKph string                              `json:"wind_gust_kph"`
+    WindGustKph float64                             `json:"wind_gust_kph"`
     PressureMb string                               `json:"pressure_mb"`
     PressureIn string                               `json:"pressure_in"`
     PressureTrend string                            `json:"pressure_trend"`
     DewpointString string                           `json:"dewpoint_string"`
-    DewpointF int                                   `json:"dewpoint_f"`
-    DewpointC int                                   `json:"dewpoint_c"`
+    DewpointF float64                               `json:"dewpoint_f"`
+    DewpointC float64                               `json:"dewpoint_c"`
     HeatIndexString string                          `json:"heat_index_string"`
     HeatIndexF string                               `json:"heat_index_f"`
     HeatIndexC string                               `json:"heat_index_c"`
@@ -112,9 +112,9 @@ func WundergroundAdaptCurrentWeather(jsonString string) MeasurementArray {
     temp_raw := data.CurrentObservation.TempC
     wind_raw := data.CurrentObservation.WindKph
 
-    humidity, _ := strconv.ParseFloat(humidity_raw, 32)
-    pressure, _ := strconv.ParseFloat(pressure_raw, 32)
-    precipitation, _ := strconv.ParseFloat(precipitation_raw, 32)
+    humidity, _ := strconv.ParseFloat(humidity_raw, 64)
+    pressure, _ := strconv.ParseFloat(pressure_raw, 64)
+    precipitation, _ := strconv.ParseFloat(precipitation_raw, 64)
     temp := float64(temp_raw)
     wind := float64(wind_raw)
 
