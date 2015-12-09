@@ -130,6 +130,13 @@ func CreateSources() []SourceEntry {
     entry = SourceEntry{Name:"AccuWeather", Urls:urls, Keys:keys}
     sources = append(sources, entry)
 
+
+    keys = Keyring{}
+    urls = map[string]string {"current": `http://beta.gismeteo.ru/weather-{{.Location.Gismeteo_city_name}}-{{.Location.Gismeteo_id}}/`,
+                              "forecast": ``}
+    entry = SourceEntry{Name:"Gismeteo", Urls:urls, Keys:keys}
+    sources = append(sources, entry)
+
     return sources
 }
 
