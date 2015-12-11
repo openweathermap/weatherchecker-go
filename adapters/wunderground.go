@@ -94,8 +94,9 @@ type WundergroundWeatherStruct struct {
 }
 
 func wundergroundDecode (s string) WundergroundWeatherStruct {
+    var data WundergroundWeatherStruct
+
     var byteString = []byte(s)
-    var data = WundergroundWeatherStruct{}
 
     json.Unmarshal(byteString, &data)
 

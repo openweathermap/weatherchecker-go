@@ -2,6 +2,7 @@ package main
 
 import (
         "encoding/json"
+        "errors"
         "flag"
         "fmt"
         "net/http"
@@ -118,7 +119,19 @@ func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
-    wtypes := []string{"current"}
+    query_holder := r.URL.Query()
+
+    var wtypes []string
+    wtype := query_holder.Get("wtype")
+
+    if wtype == "" {
+        wtypes = []string{"current", "forecast"}
+    } else if (wtype != "current" && wtype != "forecast" && wtype != "") {
+        PrintStatus(errors.New(""), "Invalid wtype specified.", w); return
+    } else {
+        wtypes = []string{wtype}
+    }
+
     locations_query := locations.RetrieveLocations()
     historyEntry := history.AddHistoryEntry(locations_query, sources, wtypes)
     PrintHistoryEntry(historyEntry, w)

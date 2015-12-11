@@ -26,8 +26,8 @@ type Myweather2Response struct {
 }
 
 func myweather2Decode (s string) Myweather2Response {
+    var data Myweather2Response
     var byteString = []byte(s)
-    var data = Myweather2Response{}
 
     json.Unmarshal(byteString, &data)
 

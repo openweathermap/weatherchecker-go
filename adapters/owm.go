@@ -4,12 +4,12 @@ import (
         "encoding/json"
         )
 
-type LocationCoords struct {
+type OwmLocationCoords struct {
     Longitude float64 `json:"lon"`
     Latitude float64 `json:"lat"`
 }
 
-type SystemInfo struct {
+type OwmSystemInfo struct {
     Type int `json:"type"`
     Id int `json:"id"`
     Message float64 `json:"message"`
@@ -18,14 +18,14 @@ type SystemInfo struct {
     Sunset int `json:"sunset"`
 }
 
-type WeatherInfo struct {
+type OwmWeatherInfo struct {
     Id int `json:"id"`
     Main string `json:"main"`
     Description string `json:"description"`
     Icon string `json:"icon"`
 }
 
-type MainInfo struct {
+type OwmMainInfo struct {
     Temp float64 `json:"temp"`
     Pressure float64 `json:"pressure"`
     Humidity int `json:"humidity"`
@@ -33,33 +33,34 @@ type MainInfo struct {
     TempMax float64 `json:"temp_max"`
 }
 
-type WindInfo struct {
+type OwmWindInfo struct {
     Speed float64 `json:"speed"`
     Degree float64 `json:"deg"`
 }
 
-type CloudInfo struct {
+type OwmCloudInfo struct {
     All int `json:"all"`
 }
 
-type WeatherHash struct {
-    Coord LocationCoords `json:"coord"`
+type OwmWeatherStruct struct {
+    Coord OwmLocationCoords `json:"coord"`
     Code int `json:"cod"`
     Name string `json:"name"`
-    Sys SystemInfo `json:"sys"`
-    Weather []WeatherInfo `json:"weather"`
+    Sys OwmSystemInfo `json:"sys"`
+    Weather []OwmWeatherInfo `json:"weather"`
     Base string `json:"base"`
-    Main MainInfo `json:"main"`
+    Main OwmMainInfo `json:"main"`
     Visibility int `json:"visibility"`
-    Wind WindInfo `json:"wind"`
-    Clouds CloudInfo `json:"clouds"`
+    Wind OwmWindInfo `json:"wind"`
+    Clouds OwmCloudInfo `json:"clouds"`
     Timestamp int `json:"dt"`
     Id int `json:"id"`
 }
 
-func owmDecode (s string) WeatherHash {
+func owmDecode (s string) OwmWeatherStruct {
+    var data OwmWeatherStruct
+
     var byteString = []byte(s)
-    var data = WeatherHash{}
 
     json.Unmarshal(byteString, &data)
 
