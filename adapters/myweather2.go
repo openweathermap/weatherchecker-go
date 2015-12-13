@@ -4,6 +4,7 @@ import (
         "encoding/json"
         "strconv"
         "strings"
+        "time"
         )
 
 type Myweather2WindInfo struct {
@@ -38,6 +39,8 @@ func Myweather2AdaptCurrentWeather(jsonString string) MeasurementArray {
     var data = myweather2Decode(jsonString)
     var measurements MeasurementArray
 
+    dt := time.Now()
+
     humidity_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Humidity)
     pressure_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Pressure)
     temp_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Temp)
@@ -50,7 +53,7 @@ func Myweather2AdaptCurrentWeather(jsonString string) MeasurementArray {
 
     precipitation := float64(0)
 
-    measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
+    measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind}, Timestamp: dt})
 
     return measurements
 }

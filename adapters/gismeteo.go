@@ -5,6 +5,8 @@ import (
         "strconv"
         "strings"
 
+        "time"
+
         "github.com/PuerkitoBio/goquery"
         )
 
@@ -25,8 +27,10 @@ func normalize_pressure(pressure float64, unit string) (float64, error) {
 func GismeteoAdaptCurrentWeather(htmlString string) MeasurementArray {
     var measurements MeasurementArray
 
+    dt := time.Now()
+
     htmlDoc, htmlErr := goquery.NewDocumentFromReader(strings.NewReader(htmlString))
-    if htmlErr != nil {return MeasurementArray{MeasurementSchema{}}}
+    if htmlErr != nil {return MeasurementArray{}}
 
     labelLookupTable := make(map[string]string)
     labelLookupTable["Ветер"] = "wind_speed"
@@ -63,7 +67,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) MeasurementArray {
         itemMap[mapKey] = value
     }
 
-    entry := MeasurementSchema{}
+    entry := Measurement{}
 
     temp, err := strconv.ParseFloat(temp_raw, 64); if err == nil {entry.Temp = temp}
 
@@ -71,7 +75,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) MeasurementArray {
     wind_speed_raw, im_ok := itemMap["wind_speed"];if im_ok == true {wind, err := strconv.ParseFloat(wind_speed_raw, 64); if err == nil {entry.Wind = wind}}
     pressure_raw, im_ok := itemMap["pressure"];if im_ok == true {pressure, err := strconv.ParseFloat(pressure_raw, 64); if err == nil {entry.Pressure = pressure}}
 
-    measurements = append(measurements, entry)
+    measurements = append(measurements, MeasurementSchema{Data: entry, Timestamp: dt})
 
     return measurements
 }

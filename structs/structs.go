@@ -18,6 +18,7 @@ type HistoryDataEntry struct {
     Location LocationEntry `json:"location"`
     Source SourceEntry `json:"source"`
     Measurements adapters.MeasurementArray `json:"measurements"`
+    RequestTime time.Time `json:"request_time"`
     WType string `json:"wtype"`
     Url string `json:"url"`
 }
@@ -59,11 +60,13 @@ type WeatherHistory struct {
 
 func (this *WeatherHistory) AddHistoryEntry (locations []LocationEntry, sources []SourceEntry, wtypes []string) HistoryEntry {
     var dataset []HistoryDataEntry
+    dt := time.Now()
 
     for _, location := range locations {
         for _, source := range sources {
             for _, wtype := range wtypes {
                 data := GetDataEntry(location, source, wtype)
+                data.RequestTime = dt
 
                 dataset = append(dataset, data)
             }

@@ -2,6 +2,8 @@ package adapters
 
 import (
         "encoding/json"
+
+        "time"
         )
 
 type ForecastioWeatherBase struct {
@@ -72,6 +74,8 @@ func ForecastioAdaptCurrentWeather(jsonString string) MeasurementArray {
     var data = forecastioDecode(jsonString)
     var measurements MeasurementArray
 
+    dt := time.Now()
+
     humidity_raw := data.Current.Humidity
     pressure_raw := data.Current.Pressure
     precipitation_raw := data.Current.PrecipIntensity
@@ -84,7 +88,7 @@ func ForecastioAdaptCurrentWeather(jsonString string) MeasurementArray {
     temp := float64((temp_raw - 32) * 5 / 9)
     wind := float64(wind_raw / 2.23)
 
-    measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
+    measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind}, Timestamp: dt})
 
     return measurements
 }

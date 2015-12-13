@@ -1,6 +1,10 @@
 package adapters
 
-type MeasurementSchema struct {
+import (
+    "time"
+)
+
+type Measurement struct {
     Humidity float64
     Pressure float64
     Precipitation float64
@@ -8,9 +12,14 @@ type MeasurementSchema struct {
     Wind float64
 }
 
+type MeasurementSchema struct {
+    Data Measurement
+    Timestamp time.Time
+}
+
 type MeasurementArray []MeasurementSchema
 
-func AdaptStub (s string) MeasurementArray {return MeasurementArray{MeasurementSchema{}}}
+func AdaptStub (s string) MeasurementArray {return MeasurementArray{}}
 
 func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementArray {
     var adaptFunc func(string)MeasurementArray
@@ -45,5 +54,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
         }
     }
 
-    return adaptFunc(data)
+    measurements := adaptFunc(data)
+
+    return measurements
 }

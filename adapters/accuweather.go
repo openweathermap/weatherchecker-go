@@ -4,6 +4,7 @@ import (
         "errors"
         "strconv"
         "strings"
+        "time"
 
         "github.com/PuerkitoBio/goquery"
         )
@@ -60,13 +61,15 @@ func AccuweatherAdaptCurrentTemp (htmlString string) (float64, error) {
 func AccuweatherAdaptCurrentWeather (htmlString string) MeasurementArray {
     var measurements MeasurementArray
 
+    dt := time.Now()
+
     humidity, _ := AccuweatherAdaptCurrentHumidity(htmlString)
     precipitation := float64(0)
     pressure := float64(0)
     temp, _ := AccuweatherAdaptCurrentTemp(htmlString)
     wind := float64(0)
 
-    measurements = append(measurements, MeasurementSchema{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind})
+    measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity:humidity, Precipitation:precipitation, Pressure:pressure, Temp:temp, Wind:wind}, Timestamp: dt})
 
     return measurements
 }
