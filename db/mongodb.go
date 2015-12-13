@@ -76,8 +76,8 @@ var db *MongoDb = &MongoDb{}
 
 func Db() *MongoDb { return db }
 
-func GetObjectIDFromString (s string) (bson.ObjectId, error) {
+func GetObjectIDFromString(s string) (bson.ObjectId, error) {
 	b := bson.NewObjectId()
-    err := b.UnmarshalJSON([]byte(`"` + s + `"`))
-    return b, err
+	err := b.UnmarshalJSON([]byte(`"` + s + `"`))
+	return b, err
 }
