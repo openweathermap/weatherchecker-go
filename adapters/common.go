@@ -37,7 +37,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
 	fnTable["MyWeather2"]["forecast"] = AdaptStub
 	fnTable["Forecast.io"]["current"] = ForecastioAdaptCurrentWeather
 	fnTable["Forecast.io"]["forecast"] = AdaptStub
-	fnTable["WorldWeatherOnline"]["current"] = AdaptStub
+	fnTable["WorldWeatherOnline"]["current"] = WorldweatheronlineAdaptCurrentWeather
 	fnTable["WorldWeatherOnline"]["forecast"] = AdaptStub
 	fnTable["AccuWeather"]["current"] = AccuweatherAdaptCurrentWeather
 	fnTable["AccuWeather"]["forecast"] = AdaptStub
