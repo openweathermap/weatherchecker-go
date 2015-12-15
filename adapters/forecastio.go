@@ -70,9 +70,13 @@ func forecastioDecode(s string) ForecastioWeatherResponse {
 	return data
 }
 
-func ForecastioAdaptCurrentWeather(jsonString string) MeasurementArray {
+func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
 	var data = forecastioDecode(jsonString)
-	var measurements MeasurementArray
 
 	dt := time.Now()
 

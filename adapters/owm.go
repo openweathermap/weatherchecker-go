@@ -69,9 +69,14 @@ func owmDecode(s string) OwmWeatherStruct {
 	return data
 }
 
-func OwmAdaptCurrentWeather(jsonString string) MeasurementArray {
-	var data = owmDecode(jsonString)
-	var measurements MeasurementArray
+func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
+
+	var data = owmCurrentDecode(jsonString)
 
 	dt := time.Now()
 

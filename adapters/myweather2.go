@@ -35,9 +35,13 @@ func myweather2Decode(s string) Myweather2Response {
 	return data
 }
 
-func Myweather2AdaptCurrentWeather(jsonString string) MeasurementArray {
+func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
 	var data = myweather2Decode(jsonString)
-	var measurements MeasurementArray
 
 	dt := time.Now()
 

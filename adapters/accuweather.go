@@ -72,8 +72,12 @@ func AccuweatherAdaptCurrentTemp(htmlString string) (float64, error) {
 	return temp, nil
 }
 
-func AccuweatherAdaptCurrentWeather(htmlString string) MeasurementArray {
-	var measurements MeasurementArray
+func AccuweatherAdaptCurrentWeather(htmlString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(htmlString)
+		}
+	}()
 
 	dt := time.Now()
 

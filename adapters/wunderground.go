@@ -104,9 +104,13 @@ func wundergroundDecode(s string) WundergroundWeatherStruct {
 	return data
 }
 
-func WundergroundAdaptCurrentWeather(jsonString string) MeasurementArray {
+func WundergroundAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
 	var data = wundergroundDecode(jsonString)
-	var measurements MeasurementArray
 
 	dt := time.Now()
 

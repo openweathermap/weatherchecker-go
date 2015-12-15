@@ -49,9 +49,14 @@ func worldweatheronlineDecode(s string) WorldweatheronlineResponse {
 	return data
 }
 
-func WorldweatheronlineAdaptCurrentWeather(jsonString string) MeasurementArray {
+func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
+
 	var data = worldweatheronlineDecode(jsonString)
-	var measurements MeasurementArray
 
 	dt := time.Now()
 

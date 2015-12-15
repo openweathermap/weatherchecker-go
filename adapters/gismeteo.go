@@ -26,8 +26,12 @@ func normalize_pressure(pressure float64, unit string) (float64, error) {
 	return result, nil
 }
 
-func GismeteoAdaptCurrentWeather(htmlString string) MeasurementArray {
-	var measurements MeasurementArray
+func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(htmlString)
+		}
+	}()
 
 	dt := time.Now()
 
