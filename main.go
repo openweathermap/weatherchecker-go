@@ -38,7 +38,7 @@ func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWrit
 	MarshalPrintStuff(locationEntry, w)
 }
 
-func PrintHistoryEntry(historyEntry structs.HistoryEntry, w http.ResponseWriter) {
+func PrintHistoryEntry(historyEntry []structs.HistoryDataEntry, w http.ResponseWriter) {
 	MarshalPrintStuff(historyEntry, w)
 }
 

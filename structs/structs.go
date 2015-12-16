@@ -39,29 +39,13 @@ func GetDataEntry(location LocationEntry, source SourceEntry, wtype string) Hist
 	return data
 }
 
-type HistoryEntry struct {
-	Id        bson.ObjectId      `bson:"_id,omitempty" json:"objectid"`
-	EntryTime time.Time          `json:"entry_time"`
-	WType     string             `json:"wtype"`
-	Data      []HistoryDataEntry `json:"data"`
-}
-
-func NewHistoryEntry(dataset []HistoryDataEntry, entryTime time.Time, wType string) HistoryEntry {
-	entry := HistoryEntry{Data: dataset, EntryTime: entryTime, WType: wType}
-	entry.Id = bson.NewObjectId()
-
-	return entry
-}
-
 type WeatherHistory struct {
 	Database   *db.MongoDb
 	Collection string
 }
 
-func (this *WeatherHistory) AddHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) HistoryEntry {
-	var dataset []HistoryDataEntry
+func (this *WeatherHistory) AddHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
 	dt := time.Now()
-
 	for _, location := range locations {
 		for _, source := range sources {
 			for _, wtype := range wtypes {
@@ -73,14 +57,15 @@ func (this *WeatherHistory) AddHistoryEntry(locations []LocationEntry, sources [
 		}
 	}
 
-	newHistoryEntry := NewHistoryEntry(dataset, time.Now(), "current")
-	this.Database.Insert(this.Collection, newHistoryEntry)
+	for _, entry := range dataset {
+		this.Database.Insert(this.Collection, entry)
+	}
 
-	return newHistoryEntry
+	return dataset
 }
 
-func (this *WeatherHistory) ShowFullHistory() []HistoryEntry {
-	var result []HistoryEntry
+func (this *WeatherHistory) ShowFullHistory() []HistoryDataEntry {
+	var result []HistoryDataEntry
 	this.Database.FindAll(this.Collection, &result)
 	return result
 }
