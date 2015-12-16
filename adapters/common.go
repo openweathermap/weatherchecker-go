@@ -21,7 +21,7 @@ type MeasurementArray []MeasurementSchema
 
 func AdaptStub(s string) MeasurementArray { return MeasurementArray{} }
 
-func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementArray {
+func AdaptWeather(sourceName string, wtypeName string, data string) (measurements MeasurementArray) {
 	var adaptFunc func(string) MeasurementArray
 	var fnTable = make(map[string](map[string]func(string) MeasurementArray))
 
@@ -30,19 +30,13 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
 	}
 
 	fnTable["OpenWeatherMap"]["current"] = OwmAdaptCurrentWeather
-	fnTable["OpenWeatherMap"]["forecast"] = AdaptStub
+	fnTable["OpenWeatherMap"]["forecast"] = OwmAdaptForecast
 	fnTable["Weather Underground"]["current"] = WundergroundAdaptCurrentWeather
-	fnTable["Weather Underground"]["forecast"] = AdaptStub
 	fnTable["MyWeather2"]["current"] = Myweather2AdaptCurrentWeather
-	fnTable["MyWeather2"]["forecast"] = AdaptStub
 	fnTable["Forecast.io"]["current"] = ForecastioAdaptCurrentWeather
-	fnTable["Forecast.io"]["forecast"] = AdaptStub
 	fnTable["WorldWeatherOnline"]["current"] = WorldweatheronlineAdaptCurrentWeather
-	fnTable["WorldWeatherOnline"]["forecast"] = AdaptStub
 	fnTable["AccuWeather"]["current"] = AccuweatherAdaptCurrentWeather
-	fnTable["AccuWeather"]["forecast"] = AdaptStub
 	fnTable["Gismeteo"]["current"] = GismeteoAdaptCurrentWeather
-	fnTable["Gismeteo"]["forecast"] = AdaptStub
 
 	adaptFunc = AdaptStub
 
@@ -54,7 +48,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) MeasurementA
 		}
 	}
 
-	measurements := adaptFunc(data)
+	measurements = adaptFunc(data)
 
 	return measurements
 }
