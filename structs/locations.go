@@ -31,20 +31,20 @@ type LocationTable struct {
 	Collection string
 }
 
-func (this *LocationTable) AddLocation(city_name string, iso_country string, country_name string, latitude string, longitude string, accuweather_id string, accuweather_city_name string, gismeteo_id string, gismeteo_city_name string) LocationEntry {
+func (this *LocationTable) CreateLocation(city_name string, iso_country string, country_name string, latitude string, longitude string, accuweather_id string, accuweather_city_name string, gismeteo_id string, gismeteo_city_name string) LocationEntry {
 	newLocationEntry := NewLocationEntry(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
 	this.Database.Insert(this.Collection, newLocationEntry)
 
 	return newLocationEntry
 }
 
-func (this *LocationTable) RetrieveLocations() []LocationEntry {
+func (this *LocationTable) ReadLocations() []LocationEntry {
 	var result []LocationEntry
 	this.Database.FindAll(this.Collection, &result)
 	return result
 }
 
-func (this *LocationTable) RemoveLocation(location_id string) error {
+func (this *LocationTable) DeleteLocation(location_id string) error {
 	var err error
 	b, idParseErr := db.GetObjectIDFromString(location_id)
 

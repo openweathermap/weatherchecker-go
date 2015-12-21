@@ -31,7 +31,7 @@ func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 }
 
 func PrintHistory(w http.ResponseWriter) {
-	MarshalPrintStuff(history.ShowFullHistory(), w)
+	MarshalPrintStuff(history.ReadHistory(), w)
 }
 
 func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWriter) {
@@ -43,7 +43,7 @@ func PrintHistoryEntry(historyEntry []structs.HistoryDataEntry, w http.ResponseW
 }
 
 func PrintLocations(w http.ResponseWriter) {
-	MarshalPrintStuff(locations.RetrieveLocations(), w)
+	MarshalPrintStuff(locations.ReadLocations(), w)
 }
 
 func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
@@ -103,7 +103,7 @@ func AddLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 		err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
 		MarshalPrintStuff(err_msg, w)
 	} else {
-		locationEntry := locations.AddLocation(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
+		locationEntry := locations.CreateLocation(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
 		PrintLocationEntry(locationEntry, w)
 	}
 }
@@ -124,7 +124,7 @@ func RemoveLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 		err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
 		MarshalPrintStuff(err_msg, w)
 	} else {
-		err := locations.RemoveLocation(location_id)
+		err := locations.DeleteLocation(location_id)
 		PrintStatus(err, "Location removed successfully.", w)
 	}
 }
@@ -150,8 +150,8 @@ func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 		wtypes = []string{wtype}
 	}
 
-	locations_query := locations.RetrieveLocations()
-	historyEntry := history.AddHistoryEntry(locations_query, sources, wtypes)
+	locations_query := locations.ReadLocations()
+	historyEntry := history.CreateHistoryEntry(locations_query, sources, wtypes)
 	PrintHistoryEntry(historyEntry, w)
 }
 

@@ -30,7 +30,7 @@ func NewHistoryDataEntry(location LocationEntry, source SourceEntry, measurement
 	return entry
 }
 
-func GetDataEntry(location LocationEntry, source SourceEntry, wtype string) HistoryDataEntry {
+func MakeDataEntry(location LocationEntry, source SourceEntry, wtype string) HistoryDataEntry {
 	url := makeUrl(source.Urls[wtype], UrlData{Source: source, Location: location})
 	raw := download(url)
 	measurements := adapters.AdaptWeather(source.Name, wtype, raw)
@@ -44,12 +44,12 @@ type WeatherHistory struct {
 	Collection string
 }
 
-func (this *WeatherHistory) AddHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
+func (this *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
 	dt := time.Now()
 	for _, location := range locations {
 		for _, source := range sources {
 			for _, wtype := range wtypes {
-				data := GetDataEntry(location, source, wtype)
+				data := MakeDataEntry(location, source, wtype)
 				data.RequestTime = dt
 
 				dataset = append(dataset, data)
@@ -64,7 +64,7 @@ func (this *WeatherHistory) AddHistoryEntry(locations []LocationEntry, sources [
 	return dataset
 }
 
-func (this *WeatherHistory) ShowFullHistory() []HistoryDataEntry {
+func (this *WeatherHistory) ReadHistory() []HistoryDataEntry {
 	var result []HistoryDataEntry
 	this.Database.FindAll(this.Collection, &result)
 	return result
