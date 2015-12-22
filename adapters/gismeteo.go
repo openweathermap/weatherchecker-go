@@ -33,7 +33,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 		}
 	}()
 
-	dt := time.Now()
+	dt := time.Now().Unix()
 
 	htmlDoc, htmlErr := goquery.NewDocumentFromReader(strings.NewReader(htmlString))
 	if htmlErr != nil {

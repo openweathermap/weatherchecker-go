@@ -1,9 +1,5 @@
 package adapters
 
-import (
-	"time"
-)
-
 type Measurement struct {
 	Humidity      float64
 	Pressure      float64
@@ -14,7 +10,7 @@ type Measurement struct {
 
 type MeasurementSchema struct {
 	Data      Measurement
-	Timestamp time.Time
+	Timestamp int64
 }
 
 type MeasurementArray []MeasurementSchema

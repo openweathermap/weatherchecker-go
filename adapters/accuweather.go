@@ -79,7 +79,7 @@ func AccuweatherAdaptCurrentWeather(htmlString string) (measurements Measurement
 		}
 	}()
 
-	dt := time.Now()
+	dt := time.Now().Unix()
 
 	humidity, _ := AccuweatherAdaptCurrentHumidity(htmlString)
 	precipitation := float64(0)

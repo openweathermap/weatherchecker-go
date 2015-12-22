@@ -43,7 +43,7 @@ func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementA
 	}()
 	var data = myweather2Decode(jsonString)
 
-	dt := time.Now()
+	dt := time.Now().Unix()
 
 	humidity_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Humidity)
 	pressure_raw := strings.TrimSpace(data.Weather.CurrentWeather[0].Pressure)

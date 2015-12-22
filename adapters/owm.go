@@ -2,8 +2,6 @@ package adapters
 
 import (
 	"encoding/json"
-
-	"time"
 )
 
 type OwmLocationCoords struct {
@@ -99,7 +97,7 @@ func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
 
 	var data = owmCurrentDecode(jsonString)
 
-	dt := time.Unix(int64(data.Timestamp), 0)
+	dt := int64(data.Timestamp)
 
 	temp := float64(data.Main.Temp)
 	pressure := float64(data.Main.Pressure)
@@ -121,7 +119,7 @@ func OwmAdaptForecast(jsonString string) (measurements MeasurementArray) {
 	var data = owmForecastDecode(jsonString)
 
 	for _, entry := range data.Data {
-		dt := time.Unix(int64(entry.Timestamp), 0)
+		dt := int64(entry.Timestamp)
 
 		temp := float64(entry.Main.Temp)
 		pressure := float64(entry.Main.Pressure)

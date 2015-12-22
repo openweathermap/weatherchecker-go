@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type WundergroundResponseStruct struct {
@@ -112,7 +111,7 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 	}()
 	var data = wundergroundDecode(jsonString)
 
-	dt := time.Now()
+	dt, _ := strconv.ParseInt(data.CurrentObservation.ObservationEpoch, 10, 64)
 
 	humidity_raw := strings.TrimRight(strings.TrimSpace(data.CurrentObservation.RelativeHumidity), "%")
 	pressure_raw := strings.TrimSpace(data.CurrentObservation.PressureMb)

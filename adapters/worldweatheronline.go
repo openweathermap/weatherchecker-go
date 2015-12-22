@@ -58,7 +58,7 @@ func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements Meas
 
 	var data = worldweatheronlineDecode(jsonString)
 
-	dt := time.Now()
+	dt := time.Now().Unix()
 
 	humidity_raw := strings.TrimSpace(data.Data.CurrentCondition[0].Humidity)
 	pressure_raw := strings.TrimSpace(data.Data.CurrentCondition[0].Pressure)
