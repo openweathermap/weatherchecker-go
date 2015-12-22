@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -15,6 +16,12 @@ import (
 	"github.com/owm-inc/weatherchecker-go/db"
 	"github.com/owm-inc/weatherchecker-go/structs"
 )
+
+type JsonResponse struct {
+	Code int `json:"code"`
+	Message string `json:"message"`
+	Content interface {} `json:"content"`
+}
 
 var sources = structs.CreateSources()
 
@@ -30,101 +37,108 @@ func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	fmt.Fprintf(w, jsonString)
 }
 
+func MarshalPrintResponse(code int, message string, content interface {}, w http.ResponseWriter) {
+	MarshalPrintStuff(JsonResponse{Code: code, Message: message, Content: content}, w)
+}
+
 func PrintHistory(w http.ResponseWriter) {
-	MarshalPrintStuff(history.ReadHistory(), w)
+	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": history.ReadHistory()}, w)
 }
 
 func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWriter) {
-	MarshalPrintStuff(locationEntry, w)
+	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"location_entry": []structs.LocationEntry{locationEntry}}, w)
 }
 
 func PrintHistoryEntry(historyEntry []structs.HistoryDataEntry, w http.ResponseWriter) {
-	MarshalPrintStuff(historyEntry, w)
+	MarshalPrintResponse(200, "OK", map[string][]structs.HistoryDataEntry{"history_entry": historyEntry}, w)
 }
 
 func PrintLocations(w http.ResponseWriter) {
-	MarshalPrintStuff(locations.ReadLocations(), w)
+	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"locations": locations.ReadLocations()}, w)
 }
 
 func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
-	err_msg := make(map[string]string)
+	var status int
+	var message string
+
 	if err != nil {
-		err_msg["status"] = "500"
-		err_msg["message"] = err.Error()
+		status = 500
+		message = err.Error()
 	} else {
-		err_msg["status"] = "200"
-		err_msg["message"] = successMessage
+		status = 200
+		message = successMessage
 	}
 
-	MarshalPrintStuff(err_msg, w)
+	MarshalPrintResponse(status, message, make(map[string]string), w)
 }
 
-func GetHistory(c web.C, w http.ResponseWriter, r *http.Request) {
-	PrintHistory(w)
+func MakeMissingParamsList(query_holder url.Values, required_params []string) (missing []string) {
+	for _, entry := range required_params {
+		if query_holder.Get(entry) == "" {
+			missing = append(missing, entry)
+		}
+	}
+
+	return missing
 }
 
-func GetLocations(c web.C, w http.ResponseWriter, r *http.Request) {
-	PrintLocations(w)
-}
-
-func AddLocation(c web.C, w http.ResponseWriter, r *http.Request) {
-	missing := make([]string, 0)
-
+func CreateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	query_holder := r.URL.Query()
 
-	city_name := query_holder.Get("city_name")
-	if city_name == "" {
-		missing = append(missing, "city name")
-	}
-	iso_country := query_holder.Get("iso_country")
-	if iso_country == "" {
-		missing = append(missing, "country code")
-	}
-	country_name := query_holder.Get("country_name")
-	if country_name == "" {
-		missing = append(missing, "country name")
-	}
-	latitude := query_holder.Get("latitude")
-	if latitude == "" {
-		missing = append(missing, "latitude")
-	}
-	longitude := query_holder.Get("longitude")
-	if longitude == "" {
-		missing = append(missing, "longitude")
-	}
-	accuweather_id := query_holder.Get("accuweather_id")
-	accuweather_city_name := query_holder.Get("accuweather_city_name")
-	gismeteo_id := query_holder.Get("gismeteo_id")
-	gismeteo_city_name := query_holder.Get("gismeteo_city_name")
+	missing := MakeMissingParamsList(query_holder, []string{"city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
 
 	if len(missing) > 0 {
-		err_msg := make(map[string]string)
-		err_msg["status"] = "500"
-		err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
-		MarshalPrintStuff(err_msg, w)
+		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry := locations.CreateLocation(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
+		locationEntry := locations.CreateLocation(query_holder.Get("city_name"),
+												  query_holder.Get("iso_country"),
+												  query_holder.Get("country_name"),
+												  query_holder.Get("latitude"),
+												  query_holder.Get("longitude"),
+												  query_holder.Get("accuweather_id"),
+												  query_holder.Get("accuweather_city_name"),
+												  query_holder.Get("gismeteo_id"),
+												  query_holder.Get("gismeteo_city_name"))
 		PrintLocationEntry(locationEntry, w)
 	}
 }
 
-func RemoveLocation(c web.C, w http.ResponseWriter, r *http.Request) {
+func ReadLocations(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintLocations(w)
+}
+
+func UpdateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
+	query_holder := r.URL.Query()
+
+	missing := MakeMissingParamsList(query_holder, []string{"location_id", "city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
+	if len(missing) > 0 {
+		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
+	} else {
+		locationEntry, _ := locations.UpdateLocation(query_holder.Get("location_id"),
+													 query_holder.Get("city_name"),
+													 query_holder.Get("iso_country"),
+													 query_holder.Get("country_name"),
+													 query_holder.Get("latitude"),
+													 query_holder.Get("longitude"),
+													 query_holder.Get("accuweather_id"),
+													 query_holder.Get("accuweather_city_name"),
+													 query_holder.Get("gismeteo_id"),
+													 query_holder.Get("gismeteo_city_name"))
+		PrintLocationEntry(locationEntry, w)
+	}
+}
+
+func DeleteLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	missing := make([]string, 0)
 
 	query_holder := r.URL.Query()
 
-	location_id := query_holder.Get("location_id")
-	if location_id == "" {
-		missing = append(missing, "location_id")
-	}
+	MakeMissingParamsList(query_holder, []string{"location_id"})
 
 	if len(missing) > 0 {
-		err_msg := make(map[string]string)
-		err_msg["status"] = "500"
-		err_msg["message"] = "The following parameters are missing: " + strings.Join(missing, ", ")
-		MarshalPrintStuff(err_msg, w)
+		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		err := locations.DeleteLocation(location_id)
+		err := locations.DeleteLocation(query_holder.Get("location_id"))
 		PrintStatus(err, "Location removed successfully.", w)
 	}
 }
@@ -133,6 +147,10 @@ func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
 	err := locations.Clear()
 
 	PrintStatus(err, "Locations cleared successfully.", w)
+}
+
+func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintHistory(w)
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -198,11 +216,12 @@ func main() {
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
 
 	goji.Use(Api)
-	goji.Get(LocationEntrypoint, GetLocations)
-	goji.Get(LocationEntrypoint+"/add", AddLocation)
-	goji.Get(LocationEntrypoint+"/remove", RemoveLocation)
+	goji.Get(LocationEntrypoint, ReadLocations)
+	goji.Get(LocationEntrypoint+"/add", CreateLocation)
+	goji.Get(LocationEntrypoint+"/edit", UpdateLocation)
+	goji.Get(LocationEntrypoint+"/remove", DeleteLocation)
 	goji.Get(LocationEntrypoint+"/clear", ClearLocations)
-	goji.Get(HistoryEntrypoint, GetHistory)
+	goji.Get(HistoryEntrypoint, ReadHistory)
 	goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
 	goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
 	goji.Serve()

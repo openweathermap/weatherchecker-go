@@ -13,8 +13,11 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type HistoryDataEntry struct {
-	Id           bson.ObjectId             `bson:"_id,omitempty" json:"objectid"`
+type DbEntryBase struct {
+	Id bson.ObjectId `bson:"_id,omitempty" json:"objectid"`
+}
+
+type HistoryDataEntryBase struct {
 	Location     LocationEntry             `json:"location"`
 	Source       SourceEntry               `json:"source"`
 	Measurements adapters.MeasurementArray `json:"measurements"`
@@ -23,20 +26,24 @@ type HistoryDataEntry struct {
 	Url          string                    `json:"url"`
 }
 
-func NewHistoryDataEntry(location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string, url string) HistoryDataEntry {
-	entry := HistoryDataEntry{Location: location, Source: source, Measurements: measurements, WType: wtype, Url: url}
-	entry.Id = bson.NewObjectId()
+type HistoryDataEntry struct {
+	DbEntryBase `bson:",inline"`
+	HistoryDataEntryBase `bson:",inline"`
+}
+
+func NewHistoryDataEntry(location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string, url string) (entry HistoryDataEntry) {
+	entry = HistoryDataEntry{DbEntryBase{Id:bson.NewObjectId()}, HistoryDataEntryBase{Location: location, Source: source, Measurements: measurements, WType: wtype, Url: url}}
 
 	return entry
 }
 
-func MakeDataEntry(location LocationEntry, source SourceEntry, wtype string) HistoryDataEntry {
+func MakeDataEntry(location LocationEntry, source SourceEntry, wtype string) (entry HistoryDataEntry) {
 	url := makeUrl(source.Urls[wtype], UrlData{Source: source, Location: location})
 	raw := download(url)
 	measurements := adapters.AdaptWeather(source.Name, wtype, raw)
-	data := NewHistoryDataEntry(location, source, measurements, wtype, url)
+	entry = NewHistoryDataEntry(location, source, measurements, wtype, url)
 
-	return data
+	return entry
 }
 
 type WeatherHistory struct {
@@ -64,20 +71,19 @@ func (this *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, source
 	return dataset
 }
 
-func (this *WeatherHistory) ReadHistory() []HistoryDataEntry {
-	var result []HistoryDataEntry
+func (this *WeatherHistory) ReadHistory() (result []HistoryDataEntry) {
 	this.Database.FindAll(this.Collection, &result)
 	return result
 }
 
-func (this *WeatherHistory) Clear() error {
-	err := this.Database.RemoveAll(this.Collection)
+func (this *WeatherHistory) Clear() (err error) {
+	err = this.Database.RemoveAll(this.Collection)
 
 	return err
 }
 
-func NewWeatherHistory(db_instance *db.MongoDb) WeatherHistory {
-	var history = WeatherHistory{Database: db_instance, Collection: "WeatherHistory"}
+func NewWeatherHistory(db_instance *db.MongoDb) (history WeatherHistory) {
+	history = WeatherHistory{Database: db_instance, Collection: "WeatherHistory"}
 
 	return history
 }
@@ -92,20 +98,19 @@ type UrlData struct {
 	Location LocationEntry
 }
 
-func makeUrl(url_template string, data UrlData) string {
+func makeUrl(url_template string, data UrlData) (urlString string) {
 	var urlBuf = new(bytes.Buffer)
 
 	var t = template.New("URL template")
 	t, _ = t.Parse(url_template)
 	t.Execute(urlBuf, data)
 
-	urlString := urlBuf.String()
+	urlString = urlBuf.String()
 	return urlString
 }
 
-func download(url string) string {
+func download(url string) (data string) {
 	resp, err := http.Get(url)
-	var data string
 	if err != nil {
 		fmt.Println(`Request finished with error`, err)
 		data = ``
