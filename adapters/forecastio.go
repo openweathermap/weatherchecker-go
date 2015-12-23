@@ -8,8 +8,9 @@ type ForecastioWeatherBase struct {
 	Time              int     `json:"time"`
 	Summary           string  `json:"summary"`
 	Icon              string  `json:"icon"`
-	PrecipIntensity   int     `json:"precipIntensity"`
-	PrecipProbability int     `json:"precipProbability"`
+	PrecipIntensity   float64 `json:"precipIntensity"`
+	PrecipProbability float64 `json:"precipProbability"`
+	PrecipType        string  `json:"precipType"`
 	DewPoint          float64 `json:"dewPoint"`
 	Humidity          float64 `json:"humidity"`
 	WindSpeed         float64 `json:"windSpeed"`
@@ -25,13 +26,23 @@ type ForecastioCurrentWeather struct {
 	ApparentTemperature float64 `json:"apparentTemperature"`
 }
 
+type ForecastioHourlyWeatherDataEntry struct {
+	ForecastioWeatherBase
+	Temperature         float64 `json:"temperature"`
+	ApparentTemperature float64 `json:"apparentTemperature"`
+}
+
+type ForecastioHourlyWeather struct {
+	Summary string                             `json:"summary"`
+	Icon    string                             `json:"icon"`
+	Data    []ForecastioHourlyWeatherDataEntry `json:"data"`
+}
+
 type ForecastioDailyWeatherDataEntry struct {
 	ForecastioWeatherBase
 	MoonPhase                  float64 `json:"moonPhase"`
-	PrecipIntensity            float64 `json:"precipIntensity"`
 	PrecipIntensityMax         float64 `json:"precipIntensityMax"`
 	PrecipIntensityMaxTime     int     `json:"precipIntensityMaxTime"`
-	PrecipType                 string  `json:"precipType"`
 	PrecipAccumulation         float64 `json:"precipAccumulation"`
 	SunriseTime                int     `json:"sunriseTime"`
 	SunsetTime                 int     `json:"sunsetTime"`
@@ -55,6 +66,7 @@ type ForecastioWeatherResponse struct {
 	Timezone  string                   `json:"timezone"`
 	Offset    int                      `json:"offset"`
 	Current   ForecastioCurrentWeather `json:"currently"`
+	Hourly    ForecastioHourlyWeather  `json:"hourly"`
 	Daily     ForecastioDailyWeather   `json:"daily"`
 }
 
@@ -84,13 +96,42 @@ func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementA
 	temp_raw := data.Current.Temperature
 	wind_raw := data.Current.WindSpeed
 
-	humidity := float64(humidity_raw)
+	humidity := float64(humidity_raw) * 100
 	pressure := float64(pressure_raw)
 	precipitation := float64(precipitation_raw)
 	temp := float64((temp_raw - 32) * 5 / 9)
 	wind := float64(wind_raw / 2.23)
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
+
+	return measurements
+}
+
+func ForecastioAdaptForecast(jsonString string) (measurements MeasurementArray) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+		}
+	}()
+	var data = forecastioDecode(jsonString)
+
+	for _, entry := range data.Hourly.Data {
+		dt := int64(entry.Time)
+
+		humidity_raw := entry.Humidity
+		pressure_raw := entry.Pressure
+		precipitation_raw := entry.PrecipIntensity
+		temp_raw := entry.Temperature
+		wind_raw := entry.WindSpeed
+
+		humidity := float64(humidity_raw) * 100
+		pressure := float64(pressure_raw)
+		precipitation := float64(precipitation_raw)
+		temp := float64((temp_raw - 32) * 5 / 9)
+		wind := float64(wind_raw / 2.23)
+
+		measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
+	}
 
 	return measurements
 }
