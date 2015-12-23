@@ -57,6 +57,10 @@ func PrintLocations(w http.ResponseWriter) {
 	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"locations": locations.ReadLocations()}, w)
 }
 
+func PrintSources(w http.ResponseWriter) {
+	MarshalPrintResponse(200, "OK", map[string][]structs.SourceEntry{"sources": sources}, w)
+}
+
 func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
 	var status int
 	var message string
@@ -80,6 +84,10 @@ func MakeMissingParamsList(query_holder url.Values, required_params []string) (m
 	}
 
 	return missing
+}
+
+func ReadSources(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintSources(w)
 }
 
 func CreateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -212,10 +220,12 @@ func main() {
 
 	const ApiEntrypoint = "/api" + "/" + ApiVer
 
+	const SourcesEntrypoint = ApiEntrypoint + "/sources"
 	const LocationEntrypoint = ApiEntrypoint + "/locations"
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
 
 	goji.Use(Api)
+	goji.Get(SourcesEntrypoint, ReadSources)
 	goji.Get(LocationEntrypoint, ReadLocations)
 	goji.Get(LocationEntrypoint+"/add", CreateLocation)
 	goji.Get(LocationEntrypoint+"/edit", UpdateLocation)
