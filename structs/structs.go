@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -71,8 +72,37 @@ func (this *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, source
 	return dataset
 }
 
-func (this *WeatherHistory) ReadHistory() (result []HistoryDataEntry) {
-	this.Database.FindAll(this.Collection, &result)
+func (this *WeatherHistory) ReadHistory(entryid, source string, wtype string, country string, locationid string, requeststart string, requestend string) (result []HistoryDataEntry) {
+	result = []HistoryDataEntry{}
+	query := make(map[string]interface{})
+	if entryid != "" {
+		query["_id"], _ = db.GetObjectIDFromString(entryid)
+	} else {
+		if source != "" {
+			query["source.name"] = source
+		}
+		if wtype != "" {
+			query["wtype"] = wtype
+		}
+		if country != "" {
+			query["location.iso_country"] = country
+		}
+		if locationid != "" {
+			query["location._id"], _ = db.GetObjectIDFromString(locationid)
+		}
+		if requeststart != "" || requestend != "" {
+			requestquery := make(map[string]int64)
+			if requeststart != "" {
+				requestquery[`$gte`], _ = strconv.ParseInt(requeststart, 10, 64)
+			}
+			if requestend != "" {
+				requestquery[`$lte`], _ = strconv.ParseInt(requestend, 10, 64)
+			}
+			query["requesttime"] = requestquery
+		}
+	}
+
+	this.Database.Find(this.Collection, query, &result)
 	return result
 }
 

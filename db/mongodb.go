@@ -33,6 +33,19 @@ func (db *MongoDb) Insert(coll string, v ...interface{}) error {
 	return sess.DB("").C(coll).Insert(v...)
 }
 
+func (db *MongoDb) Find(coll string, query map[string]interface{}, v interface{}) error {
+	sess := db.sess.Copy()
+	defer sess.Close()
+
+	bsonQuery := bson.M{}
+
+	for k, qv := range query {
+		bsonQuery[k] = qv
+	}
+
+	return sess.DB("").C(coll).Find(bsonQuery).All(v)
+}
+
 func (db *MongoDb) FindById(coll string, id string, v interface{}) bool {
 	sess := db.sess.Copy()
 	defer sess.Close()

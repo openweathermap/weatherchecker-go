@@ -41,10 +41,6 @@ func MarshalPrintResponse(code int, message string, content interface {}, w http
 	MarshalPrintStuff(JsonResponse{Code: code, Message: message, Content: content}, w)
 }
 
-func PrintHistory(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": history.ReadHistory()}, w)
-}
-
 func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWriter) {
 	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"location_entry": []structs.LocationEntry{locationEntry}}, w)
 }
@@ -158,7 +154,19 @@ func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request) {
-	PrintHistory(w)
+	query_holder := r.URL.Query()
+	entryid := query_holder.Get("entryid")
+	source := query_holder.Get("source")
+	wtype := query_holder.Get("wtype")
+	country := query_holder.Get("country")
+	locationid := query_holder.Get("locationid")
+	requeststart := query_holder.Get("requeststart")
+	requestend := query_holder.Get("requestend")
+
+	history_data := history.ReadHistory(entryid, source, wtype, country, locationid, requeststart, requestend)
+	history_filters := map[string]string{"entryid": entryid, "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
+
+	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": history_data, "filters": history_filters}}, w)
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
