@@ -41,8 +41,8 @@ func CreateSources() []SourceEntry {
 	sources = append(sources, entry)
 
 	keys = Keyring{Key: os.Getenv("WORLDWEATHERONLINE_KEY")}
-	urls = map[string]string{"current": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&fx=no`,
-		"forecast": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&fx=yes&num_of_days=5&tp=24`}
+	urls = map[string]string{"current": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&fx=no&date_format=unix`,
+		"forecast": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&cc=no&fx=yes&num_of_days=5&tp=1&extra=utcDateTime`}
 	entry = SourceEntry{Name: "WorldWeatherOnline", Urls: urls, Keys: keys}
 	sources = append(sources, entry)
 
