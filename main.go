@@ -197,9 +197,7 @@ func ClearHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 
 func Api(c *web.C, h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		// Pass data through the environment
-		c.Env["history"] = &history
-		// Fully control how the next layer is called
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
