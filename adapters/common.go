@@ -1,5 +1,9 @@
 package adapters
 
+import (
+	"errors"
+)
+
 type Measurement struct {
 	Humidity      float64
 	Pressure      float64
@@ -15,14 +19,19 @@ type MeasurementSchema struct {
 
 type MeasurementArray []MeasurementSchema
 
-func AdaptStub(s string) MeasurementArray { return MeasurementArray{} }
+var AdapterPanicErr = errors.New("Adapter panicking")
 
-func AdaptWeather(sourceName string, wtypeName string, data string) (measurements MeasurementArray) {
-	var adaptFunc func(string) MeasurementArray
-	var fnTable = make(map[string](map[string]func(string) MeasurementArray))
+func AdaptStub(s string) MeasurementArray { return make(MeasurementArray, 0) }
+func AdaptNull(s string) (measurements MeasurementArray, err error) {
+	return AdaptStub(s), errors.New("No adapt function")
+}
+
+func AdaptWeather(sourceName string, wtypeName string, data string) (measurements MeasurementArray, err error) {
+	var adaptFunc func(string) (MeasurementArray, error)
+	var fnTable = make(map[string](map[string]func(string) (MeasurementArray, error)))
 
 	for _, provider := range []string{"owm", "wunderground", "myweather2", "forecast.io", "worldweatheronline", "accuweather", "gismeteo"} {
-		fnTable[provider] = make(map[string]func(string) MeasurementArray)
+		fnTable[provider] = make(map[string]func(string) (MeasurementArray, error))
 	}
 
 	fnTable["owm"]["current"] = OwmAdaptCurrentWeather
@@ -36,7 +45,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) (measurement
 	fnTable["accuweather"]["current"] = AccuweatherAdaptCurrentWeather
 	fnTable["gismeteo"]["current"] = GismeteoAdaptCurrentWeather
 
-	adaptFunc = AdaptStub
+	adaptFunc = AdaptNull
 
 	_, p_ok := fnTable[sourceName]
 	if p_ok == true {
@@ -46,7 +55,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) (measurement
 		}
 	}
 
-	measurements = adaptFunc(data)
+	measurements, err = adaptFunc(data)
 
-	return measurements
+	return measurements, err
 }

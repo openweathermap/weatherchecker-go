@@ -26,22 +26,26 @@ type Myweather2Response struct {
 	Weather Myweather2Weather `json:"weather"`
 }
 
-func myweather2Decode(s string) Myweather2Response {
-	var data Myweather2Response
-	var byteString = []byte(s)
+func myweather2Decode(s string) (data Myweather2Response, err error) {
+	byteString := []byte(s)
 
-	json.Unmarshal(byteString, &data)
+	err = json.Unmarshal(byteString, &data)
 
-	return data
+	return data, err
 }
 
-func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
-	var data = myweather2Decode(jsonString)
+	data, decodeErr := myweather2Decode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	dt := time.Now().Unix()
 
@@ -59,5 +63,5 @@ func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementA
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }

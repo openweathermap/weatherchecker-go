@@ -18,9 +18,9 @@ import (
 )
 
 type JsonResponse struct {
-	Code int `json:"code"`
-	Message string `json:"message"`
-	Content interface {} `json:"content"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Content interface{} `json:"content"`
 }
 
 var sources = structs.CreateSources()
@@ -37,7 +37,7 @@ func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	fmt.Fprintf(w, jsonString)
 }
 
-func MarshalPrintResponse(code int, message string, content interface {}, w http.ResponseWriter) {
+func MarshalPrintResponse(code int, message string, content interface{}, w http.ResponseWriter) {
 	MarshalPrintStuff(JsonResponse{Code: code, Message: message, Content: content}, w)
 }
 
@@ -92,17 +92,18 @@ func CreateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	missing := MakeMissingParamsList(query_holder, []string{"city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
 
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
+		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry := locations.CreateLocation(query_holder.Get("city_name"),
-												  query_holder.Get("iso_country"),
-												  query_holder.Get("country_name"),
-												  query_holder.Get("latitude"),
-												  query_holder.Get("longitude"),
-												  query_holder.Get("accuweather_id"),
-												  query_holder.Get("accuweather_city_name"),
-												  query_holder.Get("gismeteo_id"),
-												  query_holder.Get("gismeteo_city_name"))
+		locationEntry := locations.CreateLocation(
+			query_holder.Get("city_name"),
+			query_holder.Get("iso_country"),
+			query_holder.Get("country_name"),
+			query_holder.Get("latitude"),
+			query_holder.Get("longitude"),
+			query_holder.Get("accuweather_id"),
+			query_holder.Get("accuweather_city_name"),
+			query_holder.Get("gismeteo_id"),
+			query_holder.Get("gismeteo_city_name"))
 		PrintLocationEntry(locationEntry, w)
 	}
 }
@@ -116,18 +117,19 @@ func UpdateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 
 	missing := MakeMissingParamsList(query_holder, []string{"location_id", "city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
+		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry, _ := locations.UpdateLocation(query_holder.Get("location_id"),
-													 query_holder.Get("city_name"),
-													 query_holder.Get("iso_country"),
-													 query_holder.Get("country_name"),
-													 query_holder.Get("latitude"),
-													 query_holder.Get("longitude"),
-													 query_holder.Get("accuweather_id"),
-													 query_holder.Get("accuweather_city_name"),
-													 query_holder.Get("gismeteo_id"),
-													 query_holder.Get("gismeteo_city_name"))
+		locationEntry, _ := locations.UpdateLocation(
+			query_holder.Get("location_id"),
+			query_holder.Get("city_name"),
+			query_holder.Get("iso_country"),
+			query_holder.Get("country_name"),
+			query_holder.Get("latitude"),
+			query_holder.Get("longitude"),
+			query_holder.Get("accuweather_id"),
+			query_holder.Get("accuweather_city_name"),
+			query_holder.Get("gismeteo_id"),
+			query_holder.Get("gismeteo_city_name"))
 		PrintLocationEntry(locationEntry, w)
 	}
 }
@@ -140,7 +142,7 @@ func DeleteLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	MakeMissingParamsList(query_holder, []string{"location_id"})
 
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: " + strings.Join(missing, ", "), make(map[string]string), w)
+		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
 		err := locations.DeleteLocation(query_holder.Get("location_id"))
 		PrintStatus(err, "Location removed successfully.", w)

@@ -19,7 +19,7 @@ type LocationEntryBase struct {
 }
 
 type LocationEntry struct {
-	DbEntryBase `bson:",inline"`
+	DbEntryBase       `bson:",inline"`
 	LocationEntryBase `bson:",inline"`
 }
 

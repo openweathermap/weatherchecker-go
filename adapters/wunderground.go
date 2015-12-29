@@ -93,23 +93,26 @@ type WundergroundWeatherStruct struct {
 	CurrentObservation WundergroundCurrentObservationStruct `json:"current_observation"`
 }
 
-func wundergroundDecode(s string) WundergroundWeatherStruct {
-	var data WundergroundWeatherStruct
+func wundergroundDecode(s string) (data WundergroundWeatherStruct, err error) {
+	byteString := []byte(s)
 
-	var byteString = []byte(s)
+	err = json.Unmarshal(byteString, &data)
 
-	json.Unmarshal(byteString, &data)
-
-	return data
+	return data, err
 }
 
-func WundergroundAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+func WundergroundAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
-	var data = wundergroundDecode(jsonString)
+	data, decodeErr := wundergroundDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	dt, _ := strconv.ParseInt(data.CurrentObservation.ObservationEpoch, 10, 64)
 
@@ -127,5 +130,5 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }

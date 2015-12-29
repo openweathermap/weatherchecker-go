@@ -26,10 +26,11 @@ func normalize_pressure(pressure float64, unit string) (float64, error) {
 	return result, nil
 }
 
-func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray) {
+func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(htmlString)
+			err = AdapterPanicErr
 		}
 	}()
 
@@ -37,7 +38,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 
 	htmlDoc, htmlErr := goquery.NewDocumentFromReader(strings.NewReader(htmlString))
 	if htmlErr != nil {
-		return MeasurementArray{}
+		return AdaptStub(htmlString), htmlErr
 	}
 
 	labelLookupTable := make(map[string]string)
@@ -116,5 +117,5 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 
 	measurements = append(measurements, MeasurementSchema{Data: entry, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }

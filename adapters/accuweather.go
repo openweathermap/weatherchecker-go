@@ -72,10 +72,11 @@ func AccuweatherAdaptCurrentTemp(htmlString string) (float64, error) {
 	return temp, nil
 }
 
-func AccuweatherAdaptCurrentWeather(htmlString string) (measurements MeasurementArray) {
+func AccuweatherAdaptCurrentWeather(htmlString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(htmlString)
+			err = AdapterPanicErr
 		}
 	}()
 
@@ -89,5 +90,5 @@ func AccuweatherAdaptCurrentWeather(htmlString string) (measurements Measurement
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }

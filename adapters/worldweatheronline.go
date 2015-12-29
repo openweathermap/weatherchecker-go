@@ -60,24 +60,27 @@ type WorldweatheronlineResponse struct {
 	Data WorldweatheronlineResponseData `json:"data"`
 }
 
-func worldweatheronlineDecode(s string) WorldweatheronlineResponse {
-	var data WorldweatheronlineResponse
+func worldweatheronlineDecode(s string) (data WorldweatheronlineResponse, err error) {
+	byteString := []byte(s)
 
-	var byteString = []byte(s)
+	err = json.Unmarshal(byteString, &data)
 
-	json.Unmarshal(byteString, &data)
-
-	return data
+	return data, err
 }
 
-func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
 
-	var data = worldweatheronlineDecode(jsonString)
+	data, decodeErr := worldweatheronlineDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	dt, _ := strconv.ParseInt(data.Data.CurrentCondition[0].ObservationTime, 10, 64)
 
@@ -95,16 +98,21 @@ func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements Meas
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }
 
-func WorldweatheronlineAdaptForecast(jsonString string) (measurements MeasurementArray) {
+func WorldweatheronlineAdaptForecast(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
-	var data = worldweatheronlineDecode(jsonString)
+	data, decodeErr := worldweatheronlineDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	for _, day_entry := range data.Data.WeatherForecast {
 		for _, entry := range day_entry.Measurements {
@@ -135,5 +143,5 @@ func WorldweatheronlineAdaptForecast(jsonString string) (measurements Measuremen
 		}
 	}
 
-	return measurements
+	return measurements, err
 }

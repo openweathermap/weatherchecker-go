@@ -70,23 +70,26 @@ type ForecastioWeatherResponse struct {
 	Daily     ForecastioDailyWeather   `json:"daily"`
 }
 
-func forecastioDecode(s string) ForecastioWeatherResponse {
-	var data ForecastioWeatherResponse
-
+func forecastioDecode(s string) (data ForecastioWeatherResponse, err error) {
 	var byteString = []byte(s)
 
-	json.Unmarshal(byteString, &data)
+	err = json.Unmarshal(byteString, &data)
 
-	return data
+	return data, err
 }
 
-func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
-	var data = forecastioDecode(jsonString)
+	data, decodeErr := forecastioDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	dt := int64(data.Current.Time)
 
@@ -104,16 +107,20 @@ func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementA
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }
 
-func ForecastioAdaptForecast(jsonString string) (measurements MeasurementArray) {
+func ForecastioAdaptForecast(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
 		}
 	}()
-	var data = forecastioDecode(jsonString)
+	data, decodeErr := forecastioDecode(jsonString)
+
+	if decodeErr != nil {
+		panic(decodeErr.Error())
+	}
 
 	for _, entry := range data.Hourly.Data {
 		dt := int64(entry.Time)
@@ -133,5 +140,5 @@ func ForecastioAdaptForecast(jsonString string) (measurements MeasurementArray) 
 		measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 	}
 
-	return measurements
+	return measurements, err
 }

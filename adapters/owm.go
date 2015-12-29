@@ -72,30 +72,35 @@ type OwmForecastStruct struct {
 	Data    []OwmWeatherStruct `json:"list"`
 }
 
-func owmCurrentDecode(s string) (data OwmCurrentStruct) {
-	var byteString = []byte(s)
+func owmCurrentDecode(s string) (data OwmCurrentStruct, err error) {
+	byteString := []byte(s)
 
-	json.Unmarshal(byteString, &data)
+	err = json.Unmarshal(byteString, &data)
 
-	return data
+	return data, err
 }
 
-func owmForecastDecode(s string) (data OwmForecastStruct) {
-	var byteString = []byte(s)
+func owmForecastDecode(s string) (data OwmForecastStruct, err error) {
+	byteString := []byte(s)
 
-	json.Unmarshal(byteString, &data)
+	err = json.Unmarshal(byteString, &data)
 
-	return data
+	return data, err
 }
 
-func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
+func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
 
-	var data = owmCurrentDecode(jsonString)
+	data, decodeErr := owmCurrentDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	dt := int64(data.Timestamp)
 
@@ -107,16 +112,21 @@ func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray) {
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
-	return measurements
+	return measurements, err
 }
 
-func OwmAdaptForecast(jsonString string) (measurements MeasurementArray) {
+func OwmAdaptForecast(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
+			err = AdapterPanicErr
 		}
 	}()
-	var data = owmForecastDecode(jsonString)
+	data, decodeErr := owmForecastDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
 
 	for _, entry := range data.Data {
 		dt := int64(entry.Timestamp)
@@ -130,5 +140,5 @@ func OwmAdaptForecast(jsonString string) (measurements MeasurementArray) {
 		measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 	}
 
-	return measurements
+	return measurements, err
 }
