@@ -144,8 +144,8 @@ func NewWeatherHistory(db_instance *db.MongoDb) (history WeatherHistory) {
 }
 
 type Keyring struct {
-	Key  string
-	Uref string
+	Key  string `json:"key"`
+	Uref string `json:"uref"`
 }
 
 type UrlData struct {

@@ -7,7 +7,7 @@ import (
 type SourceEntry struct {
 	Name string            `json:"name"`
 	Urls map[string]string `json:"urls"`
-	Keys Keyring
+	Keys Keyring           `json:"keys"`
 }
 
 func CreateSources() []SourceEntry {

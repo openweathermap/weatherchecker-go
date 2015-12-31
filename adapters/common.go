@@ -5,16 +5,16 @@ import (
 )
 
 type Measurement struct {
-	Humidity      float64
-	Pressure      float64
-	Precipitation float64
-	Temp          float64
-	Wind          float64
+	Humidity      float64 `json:"humidity"`
+	Pressure      float64 `json:"pressure"`
+	Precipitation float64 `json:"precipitation"`
+	Temp          float64 `json:"temp"`
+	Wind          float64 `json:"wind"`
 }
 
 type MeasurementSchema struct {
-	Data      Measurement
-	Timestamp int64
+	Data      Measurement `json:"data"`
+	Timestamp int64       `json:"timestamp"`
 }
 
 type MeasurementArray []MeasurementSchema
