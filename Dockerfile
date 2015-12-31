@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM golang:latest
 
 COPY ./bin/app_linux_amd64 /usr/bin/weatherchecker-go
 
