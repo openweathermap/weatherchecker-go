@@ -18,7 +18,7 @@ import (
 )
 
 type JsonResponse struct {
-	Code    int         `json:"code"`
+	Status  int         `json:"status"`
 	Message string      `json:"message"`
 	Content interface{} `json:"content"`
 }
@@ -37,8 +37,8 @@ func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	fmt.Fprintf(w, jsonString)
 }
 
-func MarshalPrintResponse(code int, message string, content interface{}, w http.ResponseWriter) {
-	MarshalPrintStuff(JsonResponse{Code: code, Message: message, Content: content}, w)
+func MarshalPrintResponse(status int, message string, content interface{}, w http.ResponseWriter) {
+	MarshalPrintStuff(JsonResponse{Status: status, Message: message, Content: content}, w)
 }
 
 func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWriter) {
