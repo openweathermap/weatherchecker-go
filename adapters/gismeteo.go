@@ -55,7 +55,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 	if len(nodeGroup1) < nodeIndex1+1 {
 	} else {
 		node1 := nodeGroup1[nodeIndex1]
-		temp_raw = node1.Data
+		temp_raw = strings.Trim(node1.Data, `"`)
 	}
 
 	itemMap := make(map[string]string)
@@ -83,14 +83,14 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 
 		value := string(node2.FirstChild.Data)
 
-		itemMap[mapKey] = value
+		itemMap[mapKey] = strings.Trim(value, `"`)
 	}
 
 	entry := Measurement{}
 
-	temp, err := strconv.ParseFloat(temp_raw, 64)
+	temp, err := strconv.ParseInt(temp_raw, 10, 64)
 	if err == nil {
-		entry.Temp = temp
+		entry.Temp = float64(temp)
 	}
 
 	humidity_raw, im_ok := itemMap["humidity"]
