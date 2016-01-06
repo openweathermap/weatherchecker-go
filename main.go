@@ -134,6 +134,16 @@ func UpdateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func UpsertLocation(c web.C, w http.ResponseWriter, r *http.Request) {
+	query_holder := r.URL.Query()
+
+	if len(query_holder.Get("location_id")) == 0 {
+		CreateLocation(c, w, r)
+	} else {
+		UpdateLocation(c, w, r)
+	}
+}
+
 func DeleteLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 	missing := make([]string, 0)
 
@@ -237,6 +247,7 @@ func main() {
 	goji.Get(LocationEntrypoint, ReadLocations)
 	goji.Get(LocationEntrypoint+"/add", CreateLocation)
 	goji.Get(LocationEntrypoint+"/edit", UpdateLocation)
+	goji.Get(LocationEntrypoint+"/upsert", UpsertLocation)
 	goji.Get(LocationEntrypoint+"/remove", DeleteLocation)
 	goji.Get(LocationEntrypoint+"/clear", ClearLocations)
 	goji.Get(HistoryEntrypoint, ReadHistory)
