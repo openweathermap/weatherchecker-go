@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 
@@ -9,22 +8,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 )
-
-func normalize_pressure(pressure float64, unit string) (float64, error) {
-	unitNotFoundError := errors.New("Unit not found")
-
-	unitTable := make(map[string]float64)
-	unitTable["mmHg"] = 1013.25 / 760
-
-	rate, u_ok := unitTable[unit]
-	if u_ok == false {
-		return float64(0), unitNotFoundError
-	}
-
-	result := pressure * rate
-
-	return result, nil
-}
 
 func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray, err error) {
 	defer func() {
@@ -55,7 +38,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 	if len(nodeGroup1) < nodeIndex1+1 {
 	} else {
 		node1 := nodeGroup1[nodeIndex1]
-		temp_raw = strings.Trim(node1.Data, `"`)
+		temp_raw = strings.Replace(strings.Trim(node1.Data, `"`), "−", "-", -1)
 	}
 
 	itemMap := make(map[string]string)
@@ -88,30 +71,48 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 
 	entry := Measurement{}
 
-	temp, err := strconv.ParseInt(temp_raw, 10, 64)
-	if err == nil {
+	temp, tempConvErr := strconv.ParseInt(strings.Trim(temp_raw, `"`), 10, 64)
+	if tempConvErr == nil {
 		entry.Temp = float64(temp)
+	} else {
+		err = tempConvErr
+		return measurements, err
 	}
 
 	humidity_raw, im_ok := itemMap["humidity"]
 	if im_ok == true {
-		humidity, err := strconv.ParseFloat(humidity_raw, 64)
-		if err == nil {
+		humidity, humidityConvErr := strconv.ParseFloat(humidity_raw, 64)
+		if humidityConvErr == nil {
 			entry.Humidity = humidity
+		} else {
+			err = humidityConvErr
+			return measurements, err
 		}
 	}
 	wind_speed_raw, im_ok := itemMap["wind_speed"]
 	if im_ok == true {
-		wind, err := strconv.ParseFloat(wind_speed_raw, 64)
-		if err == nil {
-			entry.Wind = wind
+		windSpeed, windSpeedErr := strconv.ParseFloat(wind_speed_raw, 64)
+		if windSpeedErr == nil {
+			entry.Wind = windSpeed
+		} else {
+			err = windSpeedErr
+			return measurements, err
 		}
 	}
 	pressure_raw, im_ok := itemMap["pressure"]
 	if im_ok == true {
-		pressure, err := strconv.ParseFloat(pressure_raw, 64)
-		if err == nil {
-			entry.Pressure = pressure
+		pressureUnconv, pressureUnconvErr := strconv.ParseFloat(pressure_raw, 64)
+		if pressureUnconvErr == nil {
+			pressure, pressureErr := normalizePressure(pressureUnconv, "mmHg")
+			if pressureErr == nil {
+				entry.Pressure = pressure
+			} else {
+				err = pressureErr
+				return measurements, err
+			}
+		} else {
+			err = pressureUnconvErr
+			return measurements, err
 		}
 	}
 
