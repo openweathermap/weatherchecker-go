@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Weather Checker UI</title>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script data-main="/ui/scripts/index" src="http://requirejs.org/docs/release/2.1.22/minified/require.js"></script>
+    <style>
+    form {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    
+    input.entry {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        display: block;
+    }
+    </style>
+</head>
+
+<body>
+    <p>Веб-интерфейс Weather Checker</p>
+    <!-- <input class="server_uri" value="http://localhost:1406"></input> -->
+    <pre class="logger"></pre>
+    <form class="refresh">
+        <input class="refresh_button" type="button" value="Сделать свежий срез погоды на сервере"></input>
+    </form>
+    <div class="location">
+        <form class="location">
+            <input class="location_data_download" type="button" value="Обновить список городов"></input>
+            <input class="location_upsert" type="button" value="Добавить / Редактировать город"></input>
+        </form>
+        <form class="location_upsert">
+        </form>
+    </div>
+    <form class="weather">
+        <select name="locationid" class="location_list"></select>
+        <input class="get_weatherdata" type="submit" value="Загрузить данные для выбранного города"></input>
+    </form>
+    <div class="weathertable">
+    </div>
+    <div class="weatherchart">
+    </div>
+</body>
+
+</html>

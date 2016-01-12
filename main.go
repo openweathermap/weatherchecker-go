@@ -1,5 +1,6 @@
 package main
 
+//go:generate go-bindata -o "bindata/bindata.go" -pkg "bindata" "data/..."
 import (
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
 
+	"github.com/owm-inc/weatherchecker-go/bindata"
 	"github.com/owm-inc/weatherchecker-go/db"
 	"github.com/owm-inc/weatherchecker-go/structs"
 )
@@ -215,6 +217,17 @@ func Api(c *web.C, h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
+	assetPath := "data" + r.URL.Path
+	asset, err := bindata.Asset(assetPath)
+	if err == nil {
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, string(asset))
+	} else {
+		fmt.Fprintf(w, err.Error()+"\n")
+	}
+}
+
 func init() {
 	flag.StringVar(&mongoDsn, "mongo", "mongodb://127.0.0.1:27017/weatherchecker", "MongoDB DSN")
 }
@@ -242,6 +255,8 @@ func main() {
 	const LocationEntrypoint = ApiEntrypoint + "/locations"
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
 
+	const UIEntrypoint = "/ui"
+
 	goji.Use(Api)
 	goji.Get(SourcesEntrypoint, ReadSources)
 	goji.Get(LocationEntrypoint, ReadLocations)
@@ -253,5 +268,8 @@ func main() {
 	goji.Get(HistoryEntrypoint, ReadHistory)
 	goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
 	goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
+
+	goji.Get(UIEntrypoint+"/*", GetPath)
+	goji.Get(UIEntrypoint, http.RedirectHandler(UIEntrypoint+"/index.html", 301))
 	goji.Serve()
 }

@@ -1,4 +1,7 @@
-build:
+clean:
+	rm -rf ./bin ./bindata
+build: clean
+	go generate
 	GOOS=linux GOARCH=amd64 go build -o ./bin/app_linux_amd64
 	docker build -t `printenv DOCKER_IMAGE_NAME`:latest .
 push: build
