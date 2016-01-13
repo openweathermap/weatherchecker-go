@@ -18,7 +18,7 @@ func CreateSources() []SourceEntry {
 
 	keys = Keyring{Key: os.Getenv("OWM_KEY")}
 	urls = map[string]string{"current": `http://api.openweathermap.org/data/2.5/weather?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&units=metric`,
-		"forecast": `http://api.openweathermap.org/data/2.5/forecast?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&cnt=10&mode=json&units=metric`}
+		"forecast": `http://pro.openweathermap.org/data/2.5/forecast?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&cnt=10&mode=json&units=metric`}
 	entry = SourceEntry{Name: "owm", Urls: urls, Keys: keys}
 	sources = append(sources, entry)
 
