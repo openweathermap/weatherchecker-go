@@ -35,8 +35,8 @@ func CreateSources() []SourceEntry {
 	sources = append(sources, entry)
 
 	keys = Keyring{Key: os.Getenv("FORECASTIO_KEY")}
-	urls = map[string]string{"current": `https://api.forecast.io/forecast/{{.Source.Keys.Key}}/{{.Location.Latitude}},{{.Location.Longitude}}`,
-		"forecast": `https://api.forecast.io/forecast/{{.Source.Keys.Key}}/{{.Location.Latitude}},{{.Location.Longitude}}`}
+	urls = map[string]string{"current": `https://api.forecast.io/forecast/{{.Source.Keys.Key}}/{{.Location.Latitude}},{{.Location.Longitude}}?units=si`,
+		"forecast": `https://api.forecast.io/forecast/{{.Source.Keys.Key}}/{{.Location.Latitude}},{{.Location.Longitude}}?units=si`}
 	entry = SourceEntry{Name: "forecast.io", Urls: urls, Keys: keys}
 	sources = append(sources, entry)
 

@@ -102,8 +102,8 @@ func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementA
 	humidity := float64(humidity_raw) * 100
 	pressure := float64(pressure_raw)
 	precipitation := float64(precipitation_raw)
-	temp := float64((temp_raw - 32) * 5 / 9)
-	wind := float64(wind_raw / 2.23)
+	temp := temp_raw
+	wind := wind_raw
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
@@ -134,8 +134,8 @@ func ForecastioAdaptForecast(jsonString string) (measurements MeasurementArray, 
 		humidity := float64(humidity_raw) * 100
 		pressure := float64(pressure_raw)
 		precipitation := float64(precipitation_raw)
-		temp := float64((temp_raw - 32) * 5 / 9)
-		wind := float64(wind_raw / 2.23)
+		temp := temp_raw
+		wind := wind_raw
 
 		measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 	}
