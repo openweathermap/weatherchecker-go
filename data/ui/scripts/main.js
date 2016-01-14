@@ -21,7 +21,8 @@ function create_input_fields(inputfields_desc) {
     for (let inputfield of inputfields_desc) {
         let entry = $('<input>', {
             name: inputfield.Name,
-            class: inputfield.Name + " entry",
+            type: "text",
+            class: inputfield.Name + " form-control",
             value: inputfield.Default,
             placeholder: inputfield.Placeholder
         })
@@ -84,28 +85,55 @@ $(document).ready(function() {
     }].concat(location_add_inputfields)
 
     function logger(data) {
-        $("pre.logger").text(data)
+        console.log(data)
     }
 
     function reload_server_uri() {
         let APIEP = "api"
         let APIVER = "0.1"
-        serveraddr = "" //$("input.server_uri")[0].value
+        serveraddr = ""
         let serverEP = serveraddr + "/" + APIEP + "/" + APIVER
         entrypoints.locations = serverEP + "/" + "locations"
         entrypoints.history = serverEP + "/" + "history"
     }
+
+    let location_list_model_id = "select.location_list"
+    let location_list_model = $(location_list_model_id)
+
+    function refresh_location_list() {
+        location_list_model.empty()
+
+        let output = new String
+
+        $.get(entrypoints.locations, function(data) {
+            output = data
+            let data_object = $.parseJSON(data)
+            let locations = getlocations(data_object)
+
+            for (let entry of locations) {
+                let entryOption = $("<option>", {
+                    value: entry['id']
+                })
+                entryOption.append(entry['name'])
+                location_list_model.append(entryOption)
+            }
+
+        })
+        return output
+    }
+
+    function refresh_location_list_log() {
+        let data = refresh_location_list()
+        logger(data)
+    }
+
+    // Actions on page load
     reload_server_uri()
-        //$("input.server_uri").change(reload_server_uri)
+    refresh_location_list_log()
 
-    let model_object_id = "select.location_list"
-    let model_object = $(model_object_id)
+    // Events
 
-    $("form.serveraddr").submit(function() {
-        event.preventDefault()
-    })
-
-    $("form.refresh > input.refresh_button").click(function() {
+    $(".refresh_button").click(function() {
         $.get(entrypoints.history + "/refresh", function(data) {
             logger(data)
         })
@@ -113,6 +141,10 @@ $(document).ready(function() {
 
     function refresh_upsert_form(form, upsert_type) {
         form.empty()
+
+        let inputarea = $('<div>', {
+            class: 'inputarea'
+        })
         let inputfields = new Array
         if (upsert_type == 0) {
             inputfields = create_input_fields(location_add_inputfields)
@@ -120,27 +152,40 @@ $(document).ready(function() {
             inputfields = create_input_fields(location_update_inputfields)
         }
         for (let field of inputfields) {
-            form.append(field)
+            let group = $('<div>', {
+                class: 'form-group'
+            })
+            group.append(field)
+            inputarea.append(group)
         }
+
+        let buttonarea = $('<div>', {
+            class: 'buttonarea'
+        })
         let cancelButton = $("<input>", {
             type: "button",
-            class: "location_upsert_cancel",
+            class: "location_upsert_cancel btn btn-danger",
             value: "Отмена"
         })
         let sendButton = $("<input>", {
             type: "submit",
-            class: "location_upsert_send",
+            class: "location_upsert_send btn btn-default",
             value: "Отправить"
         })
         cancelButton.click(function() {
             form.empty()
         })
 
-        form.append(cancelButton)
-        form.append(sendButton)
+        buttonarea.append(cancelButton)
+        buttonarea.append(sendButton)
+
+        form.append($('<br>'))
+        form.append(inputarea)
+        form.append(buttonarea)
+        form.append($('<hr>'))
     }
 
-    let location_upsert_form = $("form.location_upsert")
+    let location_upsert_form = $(".location_upsert_form")
     location_upsert_form.submit(function() {
         event.preventDefault()
         let params = location_upsert_form.serialize()
@@ -154,35 +199,19 @@ $(document).ready(function() {
                 logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
         })
+        refresh_location_list()
     })
 
-    $("form.location > input.location_upsert").click(function() {
+    $(".upsert_location").click(function() {
         event.preventDefault()
-        refresh_upsert_form($("form.location_upsert"), 1)
+        refresh_upsert_form($(".location_upsert_form"), 1)
     })
 
-    $("form.location > input.location_data_download").click(function() {
-        model_object.empty();
-
-        $.get(entrypoints.locations, function(data) {
-            logger(data)
-            let data_object = $.parseJSON(data)
-            let locations = getlocations(data_object)
-
-            for (let entry of locations) {
-                let entryOption = $("<option>", {
-                    value: entry.id
-                })
-                entryOption.append(entry.name)
-                model_object.append(entryOption)
-            }
-
-        })
-    });
+    $(".location_data_download").click(refresh_location_list_log)
 
     $("form.weather").submit(function(event) {
         event.preventDefault();
-        let locationid = $(model_object_id + " option:selected")[0].value
+        let locationid = $(location_list_model_id + " option:selected").val()
         let wtype = "current"
         $.get(entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype, function(data) {
             let jsonData = $.parseJSON(data)
@@ -200,8 +229,6 @@ $(document).ready(function() {
             }
         })
     });
-
-
 
     function build_weather_table(historyObject) {
         let table = $("<table>")
@@ -260,6 +287,7 @@ $(document).ready(function() {
             tbody.append(history_entry_row)
         }
         table.append(tbody)
+        table.DataTable()
 
         return table
     }

@@ -1,48 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 
 <head>
     <meta charset="utf-8" />
     <title>Weather Checker UI</title>
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
     <script data-main="/ui/scripts/index" src="http://requirejs.org/docs/release/2.1.22/minified/require.js"></script>
-    <style>
-    form {
-        margin-top: 20px;
-        margin-bottom: 20px;
-    }
-    
-    input.entry {
-        margin-top: 10px;
-        margin-bottom: 10px;
-        display: block;
-    }
-    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="stylesheets/main.css" />
 </head>
 
 <body>
-    <p>Веб-интерфейс Weather Checker</p>
-    <!-- <input class="server_uri" value="http://localhost:1406"></input> -->
-    <pre class="logger"></pre>
-    <form class="refresh">
-        <input class="refresh_button" type="button" value="Сделать свежий срез погоды на сервере"></input>
-    </form>
-    <div class="location">
-        <form class="location">
-            <input class="location_data_download" type="button" value="Обновить список городов"></input>
-            <input class="location_upsert" type="button" value="Добавить / Редактировать город"></input>
-        </form>
-        <form class="location_upsert">
-        </form>
-    </div>
-    <form class="weather">
-        <select name="locationid" class="location_list"></select>
-        <input class="get_weatherdata" type="submit" value="Загрузить данные для выбранного города"></input>
-    </form>
-    <div class="weathertable">
-    </div>
-    <div class="weatherchart">
+    <div class="container">
+        <nav class="navbar navbar-default">
+            <a class="navbar-brand">Веб-интерфейс Weather Checker</a>
+        </nav>
+        <p>
+            <button class="refresh_button btn btn-primary" type="button">Сделать свежий срез погоды на сервере</button>
+        </p>
+        <p>
+            <div class="location">
+                <button class="location_data_download btn btn-primary" type="button">Обновить список городов</button>
+                <button class="upsert_location btn btn-primary" type="button">Добавить / Редактировать город</button>
+                <form class="location_upsert_form">
+                </form>
+            </div>
+        </p>
+        <p>
+            <form class="weather form-horizontal">
+                <div class="form-group-sm">
+                    <input class="get_weatherdata btn btn-primary" type="submit" value="Загрузить данные"></input>
+                    <div class="col-sm-2">
+                        <select name="locationid" class="location_list form-control"></select>
+                    </div>
+                </div>
+            </form>
+            <div class="weatherchart">
+            </div>
+            <div class="weathertable table table-striped">
+            </div>
+        </p>
     </div>
 </body>
 
