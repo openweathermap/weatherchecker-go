@@ -276,13 +276,13 @@ $(document).ready(function() {
 
         let table_elements = [{
             id: "json_link",
-            name: "ObjectId"
+            name: "Запись в БД"
         }, {
             id: "source",
-            name: "Источник"
+            name: "Погодный сервис"
         }, {
             id: "raw_link",
-            name: "Ссылка на источник"
+            name: "Источник"
         }, {
             id: "dt",
             name: "Дата измерений"
@@ -292,6 +292,18 @@ $(document).ready(function() {
         }, {
             id: "temp",
             name: "Температура, C"
+        }, {
+            id: "pressure",
+            name: "Давление, бар"
+        }, {
+            id: "humidity",
+            name: "Влажность, процентов"
+        }, {
+            id: "wind_speed",
+            name: "Скорость ветра, м/с"
+        }, {
+            id: "precipitation",
+            name: "Осадки, мм"
         }]
         let thead = $("<thead>")
         let theadtr = $("<tr>")
@@ -312,12 +324,16 @@ $(document).ready(function() {
             let history_entry_elements = {
                 "json_link": "<a href='" + entrypoints.history + "?" + $.param({
                     entryid: history_entry['objectid']
-                }) + "'>" + history_entry['objectid'] + "</a>",
+                }) + "'>" + "Открыть" + "</a>",
                 "source": history_entry['source']['name'],
                 "raw_link": "<a href='" + history_entry['url'] + "'>Открыть</a>",
-                "dt": history_entry['measurements'][0]['timestamp'],
-                "request_dt": history_entry['request_time'],
-                "temp": history_entry['measurements'][0]['data']['temp']
+                "dt": new Date(history_entry['measurements'][0]['timestamp'] * 1000).toISOString(),
+                "request_dt": new Date(history_entry['request_time'] * 1000).toISOString(),
+                "temp": history_entry['measurements'][0]['data']['temp'].toFixed(1),
+                "pressure": history_entry['measurements'][0]['data']['pressure'].toFixed(1),
+                "humidity": history_entry['measurements'][0]['data']['humidity'].toFixed(1),
+                "wind_speed": history_entry['measurements'][0]['data']['wind'].toFixed(1),
+                "precipitation": history_entry['measurements'][0]['data']['precipitation'].toFixed(1)
             }
 
             for (let row_cell of table_elements) {
