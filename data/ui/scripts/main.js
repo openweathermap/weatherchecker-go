@@ -2,6 +2,12 @@
 
 requirejs(["charts"])
 
+let STATUS = {
+    OK: 0,
+    LOADING: 1,
+    ERROR: 2
+}
+
 function getlocations(data) {
     let locations = new Array
     let location_list = data['content']['locations']
@@ -30,6 +36,27 @@ function create_input_fields(inputfields_desc) {
     }
 
     return input_fields
+}
+
+function set_spinner_status(spinnerContainer, status) {
+    spinnerContainer.empty()
+    let iconClass = ""
+    switch (status) {
+        case STATUS.OK: // OK
+            iconClass = "fa fa-check"
+            break
+        case STATUS.LOADING: // Loading
+            iconClass = "fa fa-spin fa-refresh"
+            break
+        case STATUS.ERROR: // Error
+            iconClass = "fa fa-minus-circle"
+            break
+        default:
+            return
+    }
+    spinnerContainer.append($('<span>', {
+        class: iconClass
+    }))
 }
 
 $(document).ready(function() {
@@ -127,9 +154,13 @@ $(document).ready(function() {
         logger(data)
     }
 
+
+    let get_weatherdata_spinner = $('.get_weatherdata_spinner')
+
     // Actions on page load
     reload_server_uri()
     refresh_location_list_log()
+    set_spinner_status(get_weatherdata_spinner, STATUS.OK)
 
     // Events
 
@@ -213,19 +244,29 @@ $(document).ready(function() {
         event.preventDefault();
         let locationid = $(location_list_model_id + " option:selected").val()
         let wtype = "current"
-        $.get(entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype, function(data) {
-            let jsonData = $.parseJSON(data)
-            let status = jsonData['status']
-            let message = jsonData['message']
-            let content = jsonData['content']
-            $(".weathertable").empty()
-            $(".weatherchart").empty()
-            logger(data)
-            if (status != 200) {
-                logger("Request failed with status " + String(status) + " and message: " + message)
-            } else {
-                $(".weathertable").append(build_weather_table(content['history']))
-                build_weather_chart($('.weatherchart'), content['history'])
+        set_spinner_status(get_weatherdata_spinner, STATUS.LOADING)
+        $.ajax({
+            url: entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype,
+            success: function(data) {
+                let jsonData = $.parseJSON(data)
+                let status = jsonData['status']
+                let message = jsonData['message']
+                let content = jsonData['content']
+                $(".weathertable").empty()
+                $(".weatherchart").empty()
+                logger(data)
+                if (status != 200) {
+                    set_spinner_status(get_weatherdata_spinner, STATUS.ERROR)
+                    logger("Request failed with status " + String(status) + " and message: " + message)
+                } else {
+                    set_spinner_status(get_weatherdata_spinner, STATUS.OK)
+                    $(".weathertable").append(build_weather_table(content['history']))
+                    build_weather_chart($('.weatherchart'), content['history'])
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                set_spinner_status(get_weatherdata_spinner, STATUS.ERROR)
+                logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
         })
     });
