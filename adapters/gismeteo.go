@@ -103,7 +103,7 @@ func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArr
 	if im_ok == true {
 		pressureUnconv, pressureUnconvErr := strconv.ParseFloat(pressure_raw, 64)
 		if pressureUnconvErr == nil {
-			pressure, pressureErr := normalizePressure(pressureUnconv, "mmHg")
+			pressure, pressureErr := convertUnits(pressureUnconv, "mmHg")
 			if pressureErr == nil {
 				entry.Pressure = pressure
 			} else {

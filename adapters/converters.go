@@ -2,18 +2,18 @@ package adapters
 
 import "errors"
 
-func normalizePressure(pressure float64, unit string) (float64, error) {
+// Converts data to various units: mmHg -> bar, F -> C
+func convertUnits(data float64, unit string) (float64, error) {
 	unitNotFoundError := errors.New("Unit not found")
 
-	unitTable := make(map[string]float64)
-	unitTable["mmHg"] = 1013.25 / 760
+	dataTable := make(map[string]float64)
+	dataTable["mmHg"] = data * 1013.25 / 760
+	dataTable["F"] = (data - 32) * 5 / 9
 
-	rate, u_ok := unitTable[unit]
+	result, u_ok := dataTable[unit]
 	if u_ok == false {
 		return float64(0), unitNotFoundError
 	}
-
-	result := pressure * rate
 
 	return result, nil
 }
