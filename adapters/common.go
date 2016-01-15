@@ -20,6 +20,7 @@ type MeasurementSchema struct {
 type MeasurementArray []MeasurementSchema
 
 var AdapterPanicErr = errors.New("Adapter panicking")
+var nodeErr = errors.New(`Node not found`)
 
 func AdaptStub(s string) MeasurementArray { return make(MeasurementArray, 0) }
 func AdaptNull(s string) (measurements MeasurementArray, err error) {
