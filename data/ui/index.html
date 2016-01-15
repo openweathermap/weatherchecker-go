@@ -7,11 +7,16 @@
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
     <script data-main="/ui/scripts/index" src="http://requirejs.org/docs/release/2.1.22/minified/require.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="stylesheets/main.css" />
+    <style>
+    .table tbody>tr>td {
+        vertical-align: middle;
+    }
+    </style>
 </head>
 
 <body>
@@ -19,32 +24,58 @@
         <nav class="navbar navbar-default">
             <a class="navbar-brand">Веб-интерфейс Weather Checker</a>
         </nav>
-        <p>
-            <button class="refresh_button btn btn-primary" type="button">Сделать свежий срез погоды на сервере</button>
-        </p>
-        <p>
-            <div class="location">
-                <button class="location_data_download btn btn-primary" type="button">Обновить список городов</button>
-                <button class="upsert_location btn btn-primary" type="button">Добавить / Редактировать город</button>
-                <form class="location_upsert_form">
-                </form>
-            </div>
-        </p>
-        <p>
-            <form class="weather form-horizontal">
-                <div class="form-group-sm">
-                    <input class="get_weatherdata btn btn-primary" type="submit" value="Загрузить данные"></input>
-                    <div class="col-sm-2">
-                        <select name="locationid" class="location_list form-control"></select>
-                    </div>
-                    <span class="get_weatherdata_spinner well well-sm"></a>
-                </div>
-            </form>
-            <div class="weatherchart">
-            </div>
-            <div class="weathertable table table-striped">
-            </div>
-        </p>
+        <div class="controls col-sm-6">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span class="refresh_spinner"></span>
+                        </td>
+                        <td>
+                            <button class="refresh_button btn btn-primary" type="button">Сделать свежий срез погоды на сервере</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="upsert_location_spinner"></span>
+                        </td>
+                        <td>
+                            <button class="upsert_location btn btn-primary" type="button">Добавить / Редактировать город</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                        </td>
+                        <td>
+                            <form class="location_upsert_form"></form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="location_data_download_spinner"></span>
+                        </td>
+                        <td>
+                            <button class="location_data_download btn btn-primary" type="button">Обновить список городов</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span class="get_weatherdata_spinner"></span>
+                        </td>
+                        <td>
+                            <form class="weather">
+                                <input class="get_weatherdata btn btn-primary" type="submit" value="Загрузить данные"></input>
+                                <select name="locationid" class="location_list btn btn-default"></select>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="weatherchart">
+        </div>
+        <div class="weathertable table table-striped">
+        </div>
     </div>
 </body>
 

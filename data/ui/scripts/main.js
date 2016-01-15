@@ -132,7 +132,7 @@ $(document).ready(function() {
 
         let output = new String
 
-        $.get(entrypoints.locations, function(data) {
+        get_with_spinner_and_callback(entrypoints.locations, location_data_download_spinner, function(data) {
             output = data
             let data_object = $.parseJSON(data)
             let locations = getlocations(data_object)
@@ -154,21 +154,49 @@ $(document).ready(function() {
         logger(data)
     }
 
+    function get_with_spinner_and_callback(requestUrl, spinnerObject, callbackFunc) {
+        set_spinner_status(spinnerObject, STATUS.LOADING)
+        $.ajax({
+            url: requestUrl,
+            success: function(data) {
+                let jsonData = $.parseJSON(data)
+                let status = jsonData['status']
 
+                if (status == 200) {
+                    set_spinner_status(spinnerObject, STATUS.OK)
+                } else {
+                    set_spinner_status(spinnerObject, STATUS.ERROR)
+                }
+
+                if (callbackFunc != undefined) {
+                    callbackFunc(data)
+                }
+
+                logger(data)
+            },
+            error: function(data) {
+                set_spinner_status(spinnerObject, STATUS.ERROR)
+            }
+        })
+    }
+
+
+    let refresh_spinner = $('.refresh_spinner')
+    let upsert_location_spinner = $('.upsert_location_spinner')
+    let location_data_download_spinner = $('.location_data_download_spinner')
     let get_weatherdata_spinner = $('.get_weatherdata_spinner')
 
     // Actions on page load
     reload_server_uri()
     refresh_location_list_log()
-    set_spinner_status(get_weatherdata_spinner, STATUS.OK)
+    for (let spinner of[refresh_spinner, upsert_location_spinner, location_data_download_spinner, get_weatherdata_spinner]) {
+        set_spinner_status(spinner, STATUS.OK)
+    }
 
     // Events
-
     $(".refresh_button").click(function() {
-        $.get(entrypoints.history + "/refresh", function(data) {
-            logger(data)
-        })
-    });
+        get_with_spinner_and_callback(entrypoints.history + "/refresh", refresh_spinner)
+    })
 
     function refresh_upsert_form(form, upsert_type) {
         form.empty()
@@ -210,10 +238,8 @@ $(document).ready(function() {
         buttonarea.append(cancelButton)
         buttonarea.append(sendButton)
 
-        form.append($('<br>'))
         form.append(inputarea)
         form.append(buttonarea)
-        form.append($('<hr>'))
     }
 
     let location_upsert_form = $(".location_upsert_form")
