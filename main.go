@@ -59,6 +59,15 @@ func PrintSources(w http.ResponseWriter) {
 	MarshalPrintResponse(200, "OK", map[string][]structs.SourceEntry{"sources": sources}, w)
 }
 
+func PrintSanitizedSources(w http.ResponseWriter) {
+	output := make([]map[string]interface{}, len(sources))
+	for i, source := range sources {
+		entry := SanitizeSource(source)
+		output[i] = entry
+	}
+	MarshalPrintResponse(200, "OK", map[string]interface{}{"sources": output}, w)
+}
+
 func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
 	var status int
 	var message string
@@ -86,6 +95,14 @@ func ValidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintStatus(nil, "API key valid.", w)
 }
 
+func SanitizeSource(source structs.SourceEntry) map[string]interface{} {
+	entry := make(map[string]interface{})
+	entry["name"] = source.Name
+	entry["urls"] = source.Urls
+
+	return entry
+}
+
 func MakeMissingParamsList(query_holder url.Values, required_params []string) (missing []string) {
 	for _, entry := range required_params {
 		if query_holder.Get(entry) == "" {
@@ -98,6 +115,10 @@ func MakeMissingParamsList(query_holder url.Values, required_params []string) (m
 
 func ReadSources(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintSources(w)
+}
+
+func ReadSanitizedSources(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintSanitizedSources(w)
 }
 
 func CreateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -179,7 +200,7 @@ func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintStatus(err, "Locations cleared successfully.", w)
 }
 
-func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request) {
+func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request, sanitize bool) {
 	query_holder := r.URL.Query()
 	entryid := query_holder.Get("entryid")
 	source := query_holder.Get("source")
@@ -192,7 +213,35 @@ func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 	history_data := history.ReadHistory(entryid, source, wtype, country, locationid, requeststart, requestend)
 	history_filters := map[string]string{"entryid": entryid, "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
 
-	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": history_data, "filters": history_filters}}, w)
+	output := make([]interface{}, len(history_data))
+	if sanitize {
+		for i, history_entry := range history_data {
+			entry := make(map[string]interface{})
+			entry["objectid"] = history_entry.Id
+			entry["status"] = history_entry.Status
+			entry["location"] = history_entry.Location
+			entry["source"] = SanitizeSource(history_entry.Source)
+			entry["measurements"] = history_entry.Measurements
+			entry["request_time"] = history_entry.RequestTime
+			entry["wtype"] = history_entry.WType
+
+			output[i] = entry
+		}
+	} else {
+		for i, history_entry := range history_data {
+			output[i] = history_entry
+		}
+	}
+
+	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": output, "filters": history_filters}}, w)
+}
+
+func ReadFullHistory(c web.C, w http.ResponseWriter, r *http.Request) {
+	ReadHistory(c, w, r, false)
+}
+
+func ReadSanitizedHistory(c web.C, w http.ResponseWriter, r *http.Request) {
+	ReadHistory(c, w, r, true)
 }
 
 func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -229,13 +278,13 @@ func Api(c *web.C, h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey string, cb func(web.C, http.ResponseWriter, *http.Request)) {
+func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey string, cb_success, cb_fail func(web.C, http.ResponseWriter, *http.Request)) {
 	key := r.URL.Query().Get("appid")
 
 	if key == adminKey {
-		cb(c, w, r)
+		cb_success(c, w, r)
 	} else {
-		InvalidApiKey(c, w, r)
+		cb_fail(c, w, r)
 	}
 }
 
@@ -290,12 +339,12 @@ func main() {
 	goji.Use(Api)
 	goji.Get(UIEntrypoint+"/*", GetPath)
 
-	goji.Get(SourcesEntrypoint, ReadSources)
 	goji.Get(LocationEntrypoint, ReadLocations)
-	goji.Get(HistoryEntrypoint, ReadHistory)
 	if !closedForPublic {
+		goji.Get(HistoryEntrypoint, ReadFullHistory)
+		goji.Get(SourcesEntrypoint, ReadSources)
 		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(c, w, r, r.URL.Query().Get("appid"), ValidApiKey)
+			CheckApiKey(c, w, r, r.URL.Query().Get("appid"), ValidApiKey, InvalidApiKey)
 		})
 		goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
 		goji.Get(LocationEntrypoint+"/add", CreateLocation)
@@ -305,14 +354,36 @@ func main() {
 		goji.Get(LocationEntrypoint+"/clear", ClearLocations)
 		goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
 	} else {
-		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ValidApiKey) })
-		goji.Get(HistoryEntrypoint+"/refresh", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, RefreshHistory) })
-		goji.Get(LocationEntrypoint+"/add", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, CreateLocation) })
-		goji.Get(LocationEntrypoint+"/edit", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, UpdateLocation) })
-		goji.Get(LocationEntrypoint+"/upsert", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, UpsertLocation) })
-		goji.Get(LocationEntrypoint+"/remove", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, DeleteLocation) })
-		goji.Get(LocationEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ClearLocations) })
-		goji.Get(HistoryEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ClearHistory) })
+		goji.Get(HistoryEntrypoint, func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, ReadFullHistory, ReadSanitizedHistory)
+		})
+		goji.Get(SourcesEntrypoint, func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, ReadSources, ReadSanitizedSources)
+		})
+		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, ValidApiKey, InvalidApiKey)
+		})
+		goji.Get(HistoryEntrypoint+"/refresh", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, RefreshHistory, InvalidApiKey)
+		})
+		goji.Get(LocationEntrypoint+"/add", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, CreateLocation, InvalidApiKey)
+		})
+		goji.Get(LocationEntrypoint+"/edit", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, UpdateLocation, InvalidApiKey)
+		})
+		goji.Get(LocationEntrypoint+"/upsert", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, UpsertLocation, InvalidApiKey)
+		})
+		goji.Get(LocationEntrypoint+"/remove", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, DeleteLocation, InvalidApiKey)
+		})
+		goji.Get(LocationEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, ClearLocations, InvalidApiKey)
+		})
+		goji.Get(HistoryEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, adminKey, ClearHistory, InvalidApiKey)
+		})
 	}
 
 	goji.Get(UIEntrypoint, http.RedirectHandler(UIPage, 301))
