@@ -256,8 +256,11 @@ func main() {
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
 
 	const UIEntrypoint = "/ui"
+	const UIPage = UIEntrypoint + "/index.html"
 
 	goji.Use(Api)
+	goji.Get(UIEntrypoint+"/*", GetPath)
+
 	goji.Get(SourcesEntrypoint, ReadSources)
 	goji.Get(LocationEntrypoint, ReadLocations)
 	goji.Get(LocationEntrypoint+"/add", CreateLocation)
@@ -269,7 +272,8 @@ func main() {
 	goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
 	goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
 
-	goji.Get(UIEntrypoint+"/*", GetPath)
-	goji.Get(UIEntrypoint, http.RedirectHandler(UIEntrypoint+"/index.html", 301))
+	goji.Get(UIEntrypoint, http.RedirectHandler(UIPage, 301))
+	goji.Get(UIEntrypoint+"/", http.RedirectHandler(UIPage, 301))
+	goji.Get("/", http.RedirectHandler(UIPage, 301))
 	goji.Serve()
 }
