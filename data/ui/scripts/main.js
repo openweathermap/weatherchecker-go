@@ -67,6 +67,8 @@ $(document).ready(function() {
         history: new String
     }
 
+    let adminKey = new String
+
     let location_add_inputfields = [{
         Name: "city_name",
         Default: "",
@@ -120,6 +122,7 @@ $(document).ready(function() {
         let APIVER = "0.1"
         serveraddr = ""
         let serverEP = serveraddr + "/" + APIEP + "/" + APIVER
+        entrypoints.appid_check = serverEP + "/" + "check_appid"
         entrypoints.locations = serverEP + "/" + "locations"
         entrypoints.history = serverEP + "/" + "history"
     }
@@ -180,22 +183,72 @@ $(document).ready(function() {
         })
     }
 
+    let appid_check_form = $(".appid_check_form")
 
+    let refresh_button = $('.refresh_button')
+    let upsert_location_button = $('.upsert_location')
+
+    let admin_buttons = [refresh_button, upsert_location_button]
+
+    function disable_admin_buttons() {
+        for (let button of admin_buttons) {
+            button.attr("disabled", true)
+        }
+    }
+
+    function enable_admin_buttons() {
+        for (let button of admin_buttons) {
+            button.attr("disabled", false)
+        }
+    }
+
+    let appid_check_spinner = $('.appid_check_spinner')
     let refresh_spinner = $('.refresh_spinner')
     let upsert_location_spinner = $('.upsert_location_spinner')
     let location_data_download_spinner = $('.location_data_download_spinner')
     let get_weatherdata_spinner = $('.get_weatherdata_spinner')
 
+    function check_appid(appid) {
+        let url = entrypoints.appid_check
+        $.ajax({
+            url: url + "?appid=" + appid,
+            success: function(data) {
+                logger(data)
+                let content = $.parseJSON(data)
+                if (content['status'] == 200) {
+                    adminKey = appid_check_form.serializeArray()[0].value
+                    set_spinner_status(appid_check_spinner, STATUS.OK)
+                    enable_admin_buttons()
+                } else {
+                    set_spinner_status(appid_check_spinner, STATUS.ERROR)
+                    disable_admin_buttons()
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                set_spinner_status(appid_check_spinner, STATUS.ERROR)
+                logger("Ошибка запроса к " + url + ":   " + textStatus)
+                disable_admin_buttons()
+            }
+        })
+    }
+
     // Actions on page load
     reload_server_uri()
     refresh_location_list_log()
-    for (let spinner of[refresh_spinner, upsert_location_spinner, location_data_download_spinner, get_weatherdata_spinner]) {
+    disable_admin_buttons()
+    check_appid(new String)
+    for (let spinner of[location_data_download_spinner, get_weatherdata_spinner]) {
         set_spinner_status(spinner, STATUS.OK)
     }
 
     // Events
-    $(".refresh_button").click(function() {
-        get_with_spinner_and_callback(entrypoints.history + "/refresh", refresh_spinner)
+    appid_check_form.submit(function() {
+        event.preventDefault()
+        check_appid(appid_check_form.serializeArray()[0].value)
+    })
+
+    refresh_button.click(function() {
+        get_with_spinner_and_callback(entrypoints.history + "/refresh" + "?appid=" + adminKey, refresh_spinner)
     })
 
     function refresh_upsert_form(form, upsert_type) {
@@ -248,7 +301,7 @@ $(document).ready(function() {
         let params = location_upsert_form.serialize()
         let url = entrypoints.locations + "/upsert"
         $.ajax({
-            url: url + "?" + params,
+            url: url + "?" + params + "&appid=" + adminKey,
             success: function(data) {
                 logger(data)
             },
@@ -259,7 +312,7 @@ $(document).ready(function() {
         refresh_location_list()
     })
 
-    $(".upsert_location").click(function() {
+    upsert_location_button.click(function() {
         event.preventDefault()
         refresh_upsert_form($(".location_upsert_form"), 1)
     })
@@ -272,7 +325,7 @@ $(document).ready(function() {
         let wtype = "current"
         set_spinner_status(get_weatherdata_spinner, STATUS.LOADING)
         $.ajax({
-            url: entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype,
+            url: entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey,
             success: function(data) {
                 let jsonData = $.parseJSON(data)
                 let status = jsonData['status']
@@ -358,7 +411,6 @@ $(document).ready(function() {
                     entryid: history_entry['objectid']
                 }) + "'>" + "Открыть" + "</a>",
                 "source": history_entry['source']['name'],
-                "raw_link": "<a href='" + history_entry['url'] + "'>Открыть</a>",
                 "dt": new Date(history_entry['measurements'][0]['timestamp'] * 1000).toISOString(),
                 "request_dt": new Date(history_entry['request_time'] * 1000).toISOString(),
                 "temp": history_entry['measurements'][0]['data']['temp'].toFixed(1),
@@ -366,6 +418,11 @@ $(document).ready(function() {
                 "humidity": history_entry['measurements'][0]['data']['humidity'].toFixed(1),
                 "wind_speed": history_entry['measurements'][0]['data']['wind'].toFixed(1),
                 "precipitation": history_entry['measurements'][0]['data']['precipitation'].toFixed(1)
+            }
+            if (history_entry['url'] != undefined) {
+                history_entry_elements["raw_link"] = "<a href='" + history_entry['url'] + "'>Открыть</a>"
+            } else {
+                history_entry_elements["raw_link"] = "Недоступен"
             }
 
             for (let row_cell of table_elements) {

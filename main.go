@@ -74,6 +74,18 @@ func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
 	MarshalPrintResponse(status, message, make(map[string]string), w)
 }
 
+func NotAllowedForPublic(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintStatus(errors.New("This entrypoint has been disabled for public installation of Weather Checker."), "", w)
+}
+
+func InvalidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintStatus(errors.New("Invalid API key."), "", w)
+}
+
+func ValidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
+	PrintStatus(nil, "API key valid.", w)
+}
+
 func MakeMissingParamsList(query_holder url.Values, required_params []string) (missing []string) {
 	for _, entry := range required_params {
 		if query_holder.Get(entry) == "" {
@@ -217,6 +229,16 @@ func Api(c *web.C, h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey string, cb func(web.C, http.ResponseWriter, *http.Request)) {
+	key := r.URL.Query().Get("appid")
+
+	if key == adminKey {
+		cb(c, w, r)
+	} else {
+		InvalidApiKey(c, w, r)
+	}
+}
+
 func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
 	assetPath := "data" + r.URL.Path
 	asset, err := bindata.Asset(assetPath)
@@ -237,6 +259,13 @@ func main() {
 
 	if os.Getenv("MONGO") != "" {
 		mongoDsn = os.Getenv("MONGO")
+	}
+
+	var adminKey = os.Getenv("ADMIN_PASS")
+
+	var closedForPublic bool
+	if os.Getenv("CLOSED_FOR_PUBLIC") == "1" {
+		closedForPublic = true
 	}
 
 	fmt.Println("Connecting to MongoDB at", mongoDsn)
@@ -263,14 +292,28 @@ func main() {
 
 	goji.Get(SourcesEntrypoint, ReadSources)
 	goji.Get(LocationEntrypoint, ReadLocations)
-	goji.Get(LocationEntrypoint+"/add", CreateLocation)
-	goji.Get(LocationEntrypoint+"/edit", UpdateLocation)
-	goji.Get(LocationEntrypoint+"/upsert", UpsertLocation)
-	goji.Get(LocationEntrypoint+"/remove", DeleteLocation)
-	goji.Get(LocationEntrypoint+"/clear", ClearLocations)
 	goji.Get(HistoryEntrypoint, ReadHistory)
-	goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
-	goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
+	if !closedForPublic {
+		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) {
+			CheckApiKey(c, w, r, r.URL.Query().Get("appid"), ValidApiKey)
+		})
+		goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
+		goji.Get(LocationEntrypoint+"/add", CreateLocation)
+		goji.Get(LocationEntrypoint+"/edit", UpdateLocation)
+		goji.Get(LocationEntrypoint+"/upsert", UpsertLocation)
+		goji.Get(LocationEntrypoint+"/remove", DeleteLocation)
+		goji.Get(LocationEntrypoint+"/clear", ClearLocations)
+		goji.Get(HistoryEntrypoint+"/clear", ClearHistory)
+	} else {
+		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ValidApiKey) })
+		goji.Get(HistoryEntrypoint+"/refresh", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, RefreshHistory) })
+		goji.Get(LocationEntrypoint+"/add", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, CreateLocation) })
+		goji.Get(LocationEntrypoint+"/edit", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, UpdateLocation) })
+		goji.Get(LocationEntrypoint+"/upsert", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, UpsertLocation) })
+		goji.Get(LocationEntrypoint+"/remove", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, DeleteLocation) })
+		goji.Get(LocationEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ClearLocations) })
+		goji.Get(HistoryEntrypoint+"/clear", func(c web.C, w http.ResponseWriter, r *http.Request) { CheckApiKey(c, w, r, adminKey, ClearHistory) })
+	}
 
 	goji.Get(UIEntrypoint, http.RedirectHandler(UIPage, 301))
 	goji.Get(UIEntrypoint+"/", http.RedirectHandler(UIPage, 301))
