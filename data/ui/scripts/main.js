@@ -287,6 +287,10 @@ $(document).ready(function() {
                 } else {
                     set_spinner_status(get_weatherdata_spinner, STATUS.OK)
                     $(".weathertable").append(build_weather_table(content['history']))
+                    $(".weathertable > table").DataTable({
+                        "paging": true,
+                        "pagingType": "full_numbers"
+                    })
                     build_weather_chart($('.weatherchart'), content['history'])
                 }
             },
@@ -298,7 +302,9 @@ $(document).ready(function() {
     });
 
     function build_weather_table(historyObject) {
-        let table = $("<table>")
+        let table = $("<table>", {
+            class: "table table-striped table-bordered"
+        })
 
         let table_elements = [{
             id: "json_link",
@@ -370,7 +376,6 @@ $(document).ready(function() {
             tbody.append(history_entry_row)
         }
         table.append(tbody)
-        table.DataTable()
 
         return table
     }
