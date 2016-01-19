@@ -105,6 +105,10 @@ $(document).ready(function() {
         Name: "gismeteo_city_name",
         Default: "",
         Placeholder: "Название города Gismeteo"
+    }, {
+        Name: "yandex_id",
+        Default: "",
+        Placeholder: "ID Яндекс"
     }]
 
     let location_update_inputfields = [{

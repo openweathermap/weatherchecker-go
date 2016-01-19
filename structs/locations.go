@@ -16,6 +16,7 @@ type LocationEntryBase struct {
 	Accuweather_city_name string `json:"accuweather_city_name"`
 	Gismeteo_id           string `json:"gismeteo_id"`
 	Gismeteo_city_name    string `json:"gismeteo_city_name"`
+	Yandex_id             string `json:"yandex_id"`
 }
 
 type LocationEntry struct {
@@ -23,16 +24,18 @@ type LocationEntry struct {
 	LocationEntryBase `bson:",inline"`
 }
 
-func NewLocationEntry(city_name string,
-	iso_country string,
-	country_name string,
-	latitude string,
-	longitude string,
-	accuweather_id string,
-	accuweather_city_name string,
-	gismeteo_id string,
-	gismeteo_city_name string) LocationEntry {
-	model := LocationEntry{DbEntryBase{Id: bson.NewObjectId()}, LocationEntryBase{City_name: city_name, Iso_country: iso_country, Country_name: country_name, Latitude: latitude, Longitude: longitude, Accuweather_id: accuweather_id, Accuweather_city_name: accuweather_city_name, Gismeteo_id: gismeteo_id, Gismeteo_city_name: gismeteo_city_name}}
+func NewLocationEntry(
+	city_name,
+	iso_country,
+	country_name,
+	latitude,
+	longitude,
+	accuweather_id,
+	accuweather_city_name,
+	gismeteo_id,
+	gismeteo_city_name,
+	yandex_id string) LocationEntry {
+	model := LocationEntry{DbEntryBase{Id: bson.NewObjectId()}, LocationEntryBase{City_name: city_name, Iso_country: iso_country, Country_name: country_name, Latitude: latitude, Longitude: longitude, Accuweather_id: accuweather_id, Accuweather_city_name: accuweather_city_name, Gismeteo_id: gismeteo_id, Gismeteo_city_name: gismeteo_city_name, Yandex_id: yandex_id}}
 
 	return model
 }
@@ -42,16 +45,18 @@ type LocationTable struct {
 	Collection string
 }
 
-func (this *LocationTable) CreateLocation(city_name string,
-	iso_country string,
-	country_name string,
-	latitude string,
-	longitude string,
-	accuweather_id string,
-	accuweather_city_name string,
-	gismeteo_id string,
-	gismeteo_city_name string) (entry LocationEntry) {
-	entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
+func (this *LocationTable) CreateLocation(
+	city_name,
+	iso_country,
+	country_name,
+	latitude,
+	longitude,
+	accuweather_id,
+	accuweather_city_name,
+	gismeteo_id,
+	gismeteo_city_name,
+	yandex_id string) (entry LocationEntry) {
+	entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name, yandex_id)
 	this.Database.Insert(this.Collection, entry)
 
 	return entry
@@ -62,22 +67,24 @@ func (this *LocationTable) ReadLocations() (result []LocationEntry) {
 	return result
 }
 
-func (this *LocationTable) UpdateLocation(location_id string,
-	city_name string,
-	iso_country string,
-	country_name string,
-	latitude string,
-	longitude string,
-	accuweather_id string,
-	accuweather_city_name string,
-	gismeteo_id string,
-	gismeteo_city_name string) (entry LocationEntry, err error) {
+func (this *LocationTable) UpdateLocation(
+	location_id,
+	city_name,
+	iso_country,
+	country_name,
+	latitude,
+	longitude,
+	accuweather_id,
+	accuweather_city_name,
+	gismeteo_id,
+	gismeteo_city_name,
+	yandex_id string) (entry LocationEntry, err error) {
 	b, idParseErr := db.GetObjectIDFromString(location_id)
 
 	if idParseErr != nil {
 		err = idParseErr
 	} else {
-		entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name)
+		entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude, accuweather_id, accuweather_city_name, gismeteo_id, gismeteo_city_name, yandex_id)
 		entry.Id = b
 		err = this.Database.Update(this.Collection, b, entry)
 	}
