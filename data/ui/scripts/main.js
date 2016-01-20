@@ -2,18 +2,18 @@
 
 requirejs(["charts"])
 
-let STATUS = {
+var STATUS = {
     OK: 0,
     LOADING: 1,
     ERROR: 2
 }
 
 function getlocations(data) {
-    let locations = new Array
-    let location_list = data['content']['locations']
+    var locations = new Array
+    var location_list = data['content']['locations']
 
-    for (let location_entry of location_list) {
-        let entry = new Object
+    for (var location_entry of location_list) {
+        var entry = new Object
         entry.id = location_entry['objectid']
         entry.name = location_entry['city_name']
         locations.push(entry)
@@ -23,9 +23,9 @@ function getlocations(data) {
 }
 
 function create_input_fields(inputfields_desc) {
-    let input_fields = new Array
-    for (let inputfield of inputfields_desc) {
-        let entry = $('<input>', {
+    var input_fields = new Array
+    for (var inputfield of inputfields_desc) {
+        var entry = $('<input>', {
             name: inputfield.Name,
             type: "text",
             class: inputfield.Name + " form-control",
@@ -40,7 +40,7 @@ function create_input_fields(inputfields_desc) {
 
 function set_spinner_status(spinnerContainer, status) {
     spinnerContainer.empty()
-    let iconClass = ""
+    var iconClass = ""
     switch (status) {
         case STATUS.OK: // OK
             iconClass = "fa fa-check"
@@ -60,16 +60,16 @@ function set_spinner_status(spinnerContainer, status) {
 }
 
 $(document).ready(function() {
-    let serveraddr = new String
+    var serveraddr = new String
 
-    let entrypoints = {
+    var entrypoints = {
         locations: new String,
         history: new String
     }
 
-    let adminKey = new String
+    var adminKey = new String
 
-    let location_add_inputfields = [{
+    var location_add_inputfields = [{
         Name: "city_name",
         Default: "",
         Placeholder: "Название города"
@@ -111,7 +111,7 @@ $(document).ready(function() {
         Placeholder: "ID Яндекс"
     }]
 
-    let location_update_inputfields = [{
+    var location_update_inputfields = [{
         Name: "entryid",
         Default: "",
         Placeholder: "ObjectID (для редактирования)"
@@ -122,30 +122,30 @@ $(document).ready(function() {
     }
 
     function reload_server_uri() {
-        let APIEP = "api"
-        let APIVER = "0.1"
+        var APIEP = "api"
+        var APIVER = "0.1"
         serveraddr = ""
-        let serverEP = serveraddr + "/" + APIEP + "/" + APIVER
+        var serverEP = serveraddr + "/" + APIEP + "/" + APIVER
         entrypoints.appid_check = serverEP + "/" + "check_appid"
         entrypoints.locations = serverEP + "/" + "locations"
         entrypoints.history = serverEP + "/" + "history"
     }
 
-    let location_list_model_id = "select.location_list"
-    let location_list_model = $(location_list_model_id)
+    var location_list_model_id = "select.location_list"
+    var location_list_model = $(location_list_model_id)
 
     function refresh_location_list() {
         location_list_model.empty()
 
-        let output = new String
+        var output = new String
 
         get_with_spinner_and_callback(entrypoints.locations, location_data_download_spinner, function(data) {
             output = data
-            let data_object = $.parseJSON(data)
-            let locations = getlocations(data_object)
+            var data_object = $.parseJSON(data)
+            var locations = getlocations(data_object)
 
-            for (let entry of locations) {
-                let entryOption = $("<option>", {
+            for (var entry of locations) {
+                var entryOption = $("<option>", {
                     value: entry['id']
                 })
                 entryOption.append(entry['name'])
@@ -157,7 +157,7 @@ $(document).ready(function() {
     }
 
     function refresh_location_list_log() {
-        let data = refresh_location_list()
+        var data = refresh_location_list()
         logger(data)
     }
 
@@ -166,8 +166,8 @@ $(document).ready(function() {
         $.ajax({
             url: requestUrl,
             success: function(data) {
-                let jsonData = $.parseJSON(data)
-                let status = jsonData['status']
+                var jsonData = $.parseJSON(data)
+                var status = jsonData['status']
 
                 if (status == 200) {
                     set_spinner_status(spinnerObject, STATUS.OK)
@@ -187,38 +187,38 @@ $(document).ready(function() {
         })
     }
 
-    let appid_check_form = $(".appid_check_form")
+    var appid_check_form = $(".appid_check_form")
 
-    let refresh_button = $('.refresh_button')
-    let upsert_location_button = $('.upsert_location')
+    var refresh_button = $('.refresh_button')
+    var upsert_location_button = $('.upsert_location')
 
-    let admin_buttons = [refresh_button, upsert_location_button]
+    var admin_buttons = [refresh_button, upsert_location_button]
 
     function disable_admin_buttons() {
-        for (let button of admin_buttons) {
+        for (var button of admin_buttons) {
             button.attr("disabled", true)
         }
     }
 
     function enable_admin_buttons() {
-        for (let button of admin_buttons) {
+        for (var button of admin_buttons) {
             button.attr("disabled", false)
         }
     }
 
-    let appid_check_spinner = $('.appid_check_spinner')
-    let refresh_spinner = $('.refresh_spinner')
-    let upsert_location_spinner = $('.upsert_location_spinner')
-    let location_data_download_spinner = $('.location_data_download_spinner')
-    let get_weatherdata_spinner = $('.get_weatherdata_spinner')
+    var appid_check_spinner = $('.appid_check_spinner')
+    var refresh_spinner = $('.refresh_spinner')
+    var upsert_location_spinner = $('.upsert_location_spinner')
+    var location_data_download_spinner = $('.location_data_download_spinner')
+    var get_weatherdata_spinner = $('.get_weatherdata_spinner')
 
     function check_appid(appid) {
-        let url = entrypoints.appid_check
+        var url = entrypoints.appid_check
         $.ajax({
             url: url + "?appid=" + appid,
             success: function(data) {
                 logger(data)
-                let content = $.parseJSON(data)
+                var content = $.parseJSON(data)
                 if (content['status'] == 200) {
                     adminKey = appid_check_form.serializeArray()[0].value
                     set_spinner_status(appid_check_spinner, STATUS.OK)
@@ -241,7 +241,7 @@ $(document).ready(function() {
     refresh_location_list_log()
     disable_admin_buttons()
     check_appid(new String)
-    for (let spinner of[location_data_download_spinner, get_weatherdata_spinner]) {
+    for (var spinner of[location_data_download_spinner, get_weatherdata_spinner]) {
         set_spinner_status(spinner, STATUS.OK)
     }
 
@@ -258,32 +258,32 @@ $(document).ready(function() {
     function refresh_upsert_form(form, upsert_type) {
         form.empty()
 
-        let inputarea = $('<div>', {
+        var inputarea = $('<div>', {
             class: 'inputarea'
         })
-        let inputfields = new Array
+        var inputfields = new Array
         if (upsert_type == 0) {
             inputfields = create_input_fields(location_add_inputfields)
         } else {
             inputfields = create_input_fields(location_update_inputfields)
         }
-        for (let field of inputfields) {
-            let group = $('<div>', {
+        for (var field of inputfields) {
+            var group = $('<div>', {
                 class: 'form-group'
             })
             group.append(field)
             inputarea.append(group)
         }
 
-        let buttonarea = $('<div>', {
+        var buttonarea = $('<div>', {
             class: 'buttonarea'
         })
-        let cancelButton = $("<input>", {
+        var cancelButton = $("<input>", {
             type: "button",
             class: "location_upsert_cancel btn btn-danger",
             value: "Отмена"
         })
-        let sendButton = $("<input>", {
+        var sendButton = $("<input>", {
             type: "submit",
             class: "location_upsert_send btn btn-default",
             value: "Отправить"
@@ -299,11 +299,11 @@ $(document).ready(function() {
         form.append(buttonarea)
     }
 
-    let location_upsert_form = $(".location_upsert_form")
+    var location_upsert_form = $(".location_upsert_form")
     location_upsert_form.submit(function() {
         event.preventDefault()
-        let params = location_upsert_form.serialize()
-        let url = entrypoints.locations + "/upsert"
+        var params = location_upsert_form.serialize()
+        var url = entrypoints.locations + "/upsert"
         $.ajax({
             url: url + "?" + params + "&appid=" + adminKey,
             success: function(data) {
@@ -325,16 +325,16 @@ $(document).ready(function() {
 
     $("form.weather").submit(function(event) {
         event.preventDefault();
-        let locationid = $(location_list_model_id + " option:selected").val()
-        let wtype = "current"
+        var locationid = $(location_list_model_id + " option:selected").val()
+        var wtype = "current"
         set_spinner_status(get_weatherdata_spinner, STATUS.LOADING)
         $.ajax({
             url: entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey,
             success: function(data) {
-                let jsonData = $.parseJSON(data)
-                let status = jsonData['status']
-                let message = jsonData['message']
-                let content = jsonData['content']
+                var jsonData = $.parseJSON(data)
+                var status = jsonData['status']
+                var message = jsonData['message']
+                var content = jsonData['content']
                 $(".weathertable").empty()
                 $(".weatherchart").empty()
                 logger(data)
@@ -359,11 +359,11 @@ $(document).ready(function() {
     });
 
     function build_weather_table(historyObject) {
-        let table = $("<table>", {
+        var table = $("<table>", {
             class: "table table-striped table-bordered"
         })
 
-        let table_elements = [{
+        var table_elements = [{
             id: "json_link",
             name: "Запись в БД"
         }, {
@@ -394,23 +394,23 @@ $(document).ready(function() {
             id: "precipitation",
             name: "Осадки, мм"
         }]
-        let thead = $("<thead>")
-        let theadtr = $("<tr>")
-        for (let element of table_elements) {
+        var thead = $("<thead>")
+        var theadtr = $("<tr>")
+        for (var element of table_elements) {
             theadtr.append("<td>" + element.name + "</td>")
         }
         thead.append(theadtr)
         table.append(thead)
 
-        let content = historyObject['data']
-        let tbody = $("<tbody>")
-        for (let history_entry of content) {
+        var content = historyObject['data']
+        var tbody = $("<tbody>")
+        for (var history_entry of content) {
             if (history_entry['status'] != 200) {
                 continue
             }
-            let history_entry_row = $("<tr>")
+            var history_entry_row = $("<tr>")
 
-            let history_entry_elements = {
+            var history_entry_elements = {
                 "json_link": "<a href='" + entrypoints.history + "?" + $.param({
                     entryid: history_entry['objectid']
                 }) + "'>" + "Открыть" + "</a>",
@@ -429,8 +429,8 @@ $(document).ready(function() {
                 history_entry_elements["raw_link"] = "Недоступен"
             }
 
-            for (let row_cell of table_elements) {
-                let text = history_entry_elements[row_cell.id]
+            for (var row_cell of table_elements) {
+                var text = history_entry_elements[row_cell.id]
                 history_entry_row.append("<td>" + text + "</td>")
             }
 

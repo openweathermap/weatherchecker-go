@@ -9,41 +9,41 @@ define(function() {
     }
 })
 
-let make_providers_list = function(content) {
-    let providersSet = new Set
-    for (let entry of content) {
-        let provider = entry["source"]["name"]
+var make_providers_list = function(content) {
+    var providersSet = new Set
+    for (var entry of content) {
+        var provider = entry["source"]["name"]
         providersSet.add(provider)
     }
     return Array.from(providersSet)
 }
 
-let make_timestamps_object = function(content) {
-    let timestampsObject = new Object
-    for (let entry of content) {
-        let measurement = entry['measurements'][0]
+var make_timestamps_object = function(content) {
+    var timestampsObject = new Object
+    for (var entry of content) {
+        var measurement = entry['measurements'][0]
 
         if (measurement == undefined) {
             continue
         }
 
-        let dt = String(measurement['timestamp'])
+        var dt = String(measurement['timestamp'])
 
         if (timestampsObject[dt] == undefined) {
             timestampsObject[dt] = new Object
         }
 
-        let provider = entry["source"]["name"]
+        var provider = entry["source"]["name"]
         timestampsObject[dt][provider] = measurement["data"]["temp"]
     }
 
     return timestampsObject
 }
 
-let make_series_object = function(providers) {
-    let seriesObject = new Object
+var make_series_object = function(providers) {
+    var seriesObject = new Object
 
-    for (let provider of providers) {
+    for (var provider of providers) {
         seriesObject[provider] = {
             name: provider,
             data: new Array
@@ -52,50 +52,50 @@ let make_series_object = function(providers) {
     return seriesObject
 }
 
-let get_weatherchart_data = function(historyObject) {
-    let series = new Array
-    let timestamps = new Array
+var get_weatherchart_data = function(historyObject) {
+    var series = new Array
+    var timestamps = new Array
 
     if (historyObject == undefined) {
         return series, timestamps
     }
 
-    let content = historyObject['data']
+    var content = historyObject['data']
 
-    let providers = make_providers_list(content)
+    var providers = make_providers_list(content)
 
-    let timestampsObject = make_timestamps_object(content)
+    var timestampsObject = make_timestamps_object(content)
 
-    let seriesObject = make_series_object(providers)
+    var seriesObject = make_series_object(providers)
 
     timestamps = Object.keys(timestampsObject)
 
-    for (let key of timestamps) {
-        let dt = timestampsObject[key]
-        for (let provider of providers) {
+    for (var key of timestamps) {
+        var dt = timestampsObject[key]
+        for (var provider of providers) {
             if (seriesObject[provider].data == undefined) {
                 seriesObject[provider].data = new Array
             }
-            let data = dt[provider]
-            let temp = data
+            var data = dt[provider]
+            var temp = data
             if (data == undefined) {
                 continue
             }
-            let unixDate = Number(key) * 1000
+            var unixDate = Number(key) * 1000
             seriesObject[provider].data.push([unixDate, temp])
         }
     }
 
-    for (let k in seriesObject) {
-        let v = seriesObject[k]
+    for (var k in seriesObject) {
+        var v = seriesObject[k]
         series.push(v)
     }
 
     return series
 }
 
-let build_weather_chart = function(containerObject, historyObject) {
-    let chart_series = get_weatherchart_data(historyObject)
+var build_weather_chart = function(containerObject, historyObject) {
+    var chart_series = get_weatherchart_data(historyObject)
 
     containerObject.highcharts({
         chart: {
