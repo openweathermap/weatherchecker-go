@@ -4,7 +4,7 @@ exports.build_weather_chart = build_weather_chart
 function make_providers_list(content) {
     var providersSet = new Set
     for (var entry of content) {
-        var provider = entry["source"]["name"]
+        var provider = entry["source"]
         providersSet.add(provider)
     }
     return Array.from(providersSet)
@@ -21,7 +21,7 @@ function make_timestamps_object(content) {
         if (timestampsObject[dt] == undefined) {
             timestampsObject[dt] = new Object
         }
-        var provider = entry["source"]["name"]
+        var provider = entry["source"]
         timestampsObject[dt][provider] = measurement["data"]["temp"]
     }
     return timestampsObject

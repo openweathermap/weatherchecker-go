@@ -18,14 +18,14 @@ type DbEntryBase struct {
 }
 
 type HistoryDataEntryBase struct {
-	Status       int                       `json:"status"`
-	Message      string                    `json:"message"`
-	Location     LocationEntry             `json:"location"`
-	Source       SourceEntry               `json:"source"`
-	Measurements adapters.MeasurementArray `json:"measurements"`
-	RequestTime  int64                     `json:"request_time"`
-	WType        string                    `json:"wtype"`
-	Url          string                    `json:"url"`
+	Status       int64
+	Message      string
+	Location     LocationEntry
+	Source       SourceEntry
+	Measurements adapters.MeasurementArray
+	RequestTime  int64
+	WType        string
+	Url          string
 }
 
 type HistoryDataEntry struct {
@@ -34,7 +34,7 @@ type HistoryDataEntry struct {
 }
 
 func NewHistoryDataEntry(location LocationEntry, source SourceEntry, measurements adapters.MeasurementArray, wtype string, url string, err error) (entry HistoryDataEntry) {
-	var status int
+	var status int64
 	var message string
 	if err != nil {
 		status = 500
@@ -97,12 +97,15 @@ func (this *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, source
 	return dataset
 }
 
-func (this *WeatherHistory) ReadHistory(entryid, source string, wtype string, country string, locationid string, requeststart string, requestend string) (result []HistoryDataEntry) {
+func (this *WeatherHistory) ReadHistory(entryid string, status int64, source string, wtype string, country string, locationid string, requeststart string, requestend string) (result []HistoryDataEntry) {
 	result = []HistoryDataEntry{}
 	query := make(map[string]interface{})
 	if entryid != "" {
 		query["_id"], _ = db.GetObjectIDFromString(entryid)
 	} else {
+		if status != 0 {
+			query["status"] = status
+		}
 		if source != "" {
 			query["source.name"] = source
 		}

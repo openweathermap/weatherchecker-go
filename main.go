@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/zenazn/goji"
@@ -205,6 +206,7 @@ func ClearLocations(c web.C, w http.ResponseWriter, r *http.Request) {
 func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request, sanitize bool) {
 	query_holder := r.URL.Query()
 	entryid := query_holder.Get("entryid")
+	status, _ := strconv.ParseInt(query_holder.Get("status"), 10, 64)
 	source := query_holder.Get("source")
 	wtype := query_holder.Get("wtype")
 	country := query_holder.Get("country")
@@ -212,27 +214,24 @@ func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request, sanitize bool)
 	requeststart := query_holder.Get("requeststart")
 	requestend := query_holder.Get("requestend")
 
-	history_data := history.ReadHistory(entryid, source, wtype, country, locationid, requeststart, requestend)
-	history_filters := map[string]string{"entryid": entryid, "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
+	history_data := history.ReadHistory(entryid, status, source, wtype, country, locationid, requeststart, requestend)
+	history_filters := map[string]string{"entryid": entryid, "status": strconv.FormatInt(status, 10), "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
 
 	output := make([]interface{}, len(history_data))
-	if sanitize {
-		for i, history_entry := range history_data {
-			entry := make(map[string]interface{})
-			entry["objectid"] = history_entry.Id
-			entry["status"] = history_entry.Status
-			entry["location"] = history_entry.Location
-			entry["source"] = SanitizeSource(history_entry.Source)
-			entry["measurements"] = history_entry.Measurements
-			entry["request_time"] = history_entry.RequestTime
-			entry["wtype"] = history_entry.WType
+	for i, history_entry := range history_data {
+		entry := make(map[string]interface{})
+		entry["objectid"] = history_entry.Id
+		entry["status"] = history_entry.Status
+		entry["location"] = history_entry.Location
+		entry["source"] = history_entry.Source.Name
+		entry["measurements"] = history_entry.Measurements
+		entry["request_time"] = history_entry.RequestTime
+		entry["wtype"] = history_entry.WType
 
-			output[i] = entry
+		if !sanitize {
+			entry["url"] = history_entry.Url
 		}
-	} else {
-		for i, history_entry := range history_data {
-			output[i] = history_entry
-		}
+		output[i] = entry
 	}
 
 	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": output, "filters": history_filters}}, w)

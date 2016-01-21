@@ -68,7 +68,7 @@ function build_weather_table(historyObject, entrypoints) {
                 "json_link": "<a href='" + entrypoints.history + "?" + $.param({
                     entryid: history_entry.objectid
                 }) + "'>" + "Открыть" + "</a>",
-                "source": history_entry.source.name,
+                "source": history_entry.source,
                 "dt": new Date(history_entry.measurements[0].timestamp * 1000).toISOString(),
                 "request_dt": new Date(history_entry.request_time * 1000).toISOString(),
                 "temp": history_entry.measurements[0].data.temp.toFixed(1),
@@ -242,6 +242,10 @@ function main() {
         });
     };
 
+    function weather_refresh_url(entrypoints, status, locationid, wtype, adminKey) {
+        return entrypoints.history + "?" + "status=" + status + "&" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey
+    };
+
     /* Actions on page load */
     refresh_location_list_log();
     disable_admin_buttons();
@@ -341,7 +345,7 @@ function main() {
         var wtype = "current"
         helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.LOADING)
         $.ajax({
-            url: entrypoints.history + "?" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey,
+            url: weather_refresh_url(entrypoints, "200", locationid, wtype, adminKey),
             success: function(data) {
                 var jsonData = $.parseJSON(data)
                 var status = jsonData.status
