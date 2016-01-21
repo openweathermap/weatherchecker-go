@@ -56,17 +56,17 @@ function set_spinner_status(spinnerContainer, status) {
     spinnerContainer.empty();
     var iconClass = "";
     switch (status) {
-        case STATUS.OK: // OK
-            iconClass = "fa fa-check"
-            break
-        case STATUS.LOADING: // Loading
-            iconClass = "fa fa-spin fa-refresh"
-            break
-        case STATUS.ERROR: // Error
-            iconClass = "fa fa-minus-circle"
-            break
-        default:
-            return
+    case STATUS.OK: // OK
+        iconClass = "fa fa-check"
+        break
+    case STATUS.LOADING: // Loading
+        iconClass = "fa fa-spin fa-refresh"
+        break
+    case STATUS.ERROR: // Error
+        iconClass = "fa fa-minus-circle"
+        break
+    default:
+        return
     };
     spinnerContainer.append($('<span>', {
         class: iconClass
@@ -77,7 +77,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerObject, callbackFunc) 
     set_spinner_status(spinnerObject, STATUS.LOADING);
     $.ajax({
         url: requestUrl,
-        success: function(data) {
+        success: function (data) {
             var jsonData = $.parseJSON(data);
             var status = jsonData['status'];
 
@@ -93,7 +93,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerObject, callbackFunc) 
 
             logger(data);
         },
-        error: function(data) {
+        error: function (data) {
             set_spinner_status(spinnerObject, STATUS.ERROR);
         }
     });

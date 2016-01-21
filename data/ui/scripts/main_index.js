@@ -5,98 +5,66 @@ var charts, helpers;
 charts = require("./charts.js");
 helpers = require("./helpers.js");
 
-function build_weather_table(historyObject, entrypoints) {
-    var i, j, table, table_elements, tbody, thead, theadtr, element, content, history_entry, history_entry_row, history_entry_elements, row_cell, text;
+function make_history_table_data(historyObject, history_entrypoint) {
+    var content = historyObject.data;
+    var values = []
 
-    table = $("<table>", {
-        class: "table table-striped table-bordered"
-    });
+    for (var history_entry of content) {
 
-    table_elements = [{
-        id: "json_link",
-        name: "Запись в БД"
-    }, {
-        id: "source",
-        name: "Погодный сервис"
-    }, {
-        id: "raw_link",
-        name: "Источник"
-    }, {
-        id: "dt",
-        name: "Дата измерений"
-    }, {
-        id: "request_dt",
-        name: "Дата запроса"
-    }, {
-        id: "temp",
-        name: "Температура, C"
-    }, {
-        id: "pressure",
-        name: "Давление, бар"
-    }, {
-        id: "humidity",
-        name: "Влажность, процентов"
-    }, {
-        id: "wind_speed",
-        name: "Скорость ветра, м/с"
-    }, {
-        id: "precipitation",
-        name: "Осадки, мм"
-    }];
-    thead = $("<thead>");
-    theadtr = $("<tr>");
-    for (i in table_elements) {
-        if (table_elements.hasOwnProperty(i)) {
-            element = table_elements[i];
-            theadtr.append("<td>" + element.name + "</td>");
+        var history_entry_flat = {
+            "json_link": "<a href='" + history_entrypoint + "?" + $.param({
+                entryid: history_entry.objectid
+            }) + "'>Open</a>",
+            "source": history_entry.source,
+            "raw_link": "N/A",
+            "dt": new Date(history_entry.measurements[0].timestamp * 1000).toISOString(),
+            "request_dt": new Date(history_entry.request_time * 1000).toISOString(),
+            "temp": history_entry.measurements[0].data.temp.toFixed(1),
+            "pressure": history_entry.measurements[0].data.pressure.toFixed(1),
+            "humidity": history_entry.measurements[0].data.humidity.toFixed(1),
+            "wind_speed": history_entry.measurements[0].data.wind.toFixed(1),
+            "precipitation": history_entry.measurements[0].data.precipitation.toFixed(1)
         };
-    };
-    thead.append(theadtr);
-    table.append(thead);
+        if (history_entry.url !== undefined) {
+            history_entry_flat.raw_link = "<a href='" + history_entry.url + "'>Open</a>";
+        };
 
-    content = historyObject.data;
-    tbody = $("<tbody>");
-    for (i in content) {
-        if (content.hasOwnProperty(i)) {
-            history_entry = content[i];
-            if (history_entry.status !== 200) {
-                break;
-            };
-            history_entry_row = $("<tr>");
-
-            history_entry_elements = {
-                "json_link": "<a href='" + entrypoints.history + "?" + $.param({
-                    entryid: history_entry.objectid
-                }) + "'>" + "Открыть" + "</a>",
-                "source": history_entry.source,
-                "dt": new Date(history_entry.measurements[0].timestamp * 1000).toISOString(),
-                "request_dt": new Date(history_entry.request_time * 1000).toISOString(),
-                "temp": history_entry.measurements[0].data.temp.toFixed(1),
-                "pressure": history_entry.measurements[0].data.pressure.toFixed(1),
-                "humidity": history_entry.measurements[0].data.humidity.toFixed(1),
-                "wind_speed": history_entry.measurements[0].data.wind.toFixed(1),
-                "precipitation": history_entry.measurements[0].data.precipitation.toFixed(1)
-            };
-            if (history_entry.url !== undefined) {
-                history_entry_elements.raw_link = "<a href='" + history_entry.url + "'>Открыть</a>";
-            } else {
-                history_entry_elements.raw_link = "Недоступен";
-            };
-
-            for (j in table_elements) {
-                if (table_elements.hasOwnProperty(j)) {
-                    row_cell = table_elements[j];
-                    text = history_entry_elements[row_cell.id];
-                    history_entry_row.append("<td>" + text + "</td>");
-                };
-            };
-
-            tbody.append(history_entry_row);
-        }
+        values.push(history_entry_flat);
     }
-    table.append(tbody);
 
-    return table;
+    var columns = [{
+        data: "json_link",
+        title: "DB entry"
+    }, {
+        data: "source",
+        title: "Provider"
+    }, {
+        data: "raw_link",
+        title: "Source"
+    }, {
+        data: "dt",
+        title: "Measurement date"
+    }, {
+        data: "request_dt",
+        title: "Request date"
+    }, {
+        data: "temp",
+        title: "Temperature, C"
+    }, {
+        data: "pressure",
+        title: "Pressure, mbar"
+    }, {
+        data: "humidity",
+        title: "Humidity, percent"
+    }, {
+        data: "wind_speed",
+        title: "Wind speed, m/s"
+    }, {
+        data: "precipitation",
+        title: "Precipitation, mm"
+    }]
+
+    return [values, columns]
 }
 
 function main() {
@@ -176,7 +144,7 @@ function main() {
 
         output = "";
 
-        helpers.get_with_spinner_and_callback(entrypoints.locations, location_data_download_spinner, function(data) {
+        helpers.get_with_spinner_and_callback(entrypoints.locations, location_data_download_spinner, function (data) {
             output = data;
             var data_object = $.parseJSON(data);
             var locations = helpers.getlocations(data_object);
@@ -222,7 +190,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function(data) {
+            success: function (data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -234,7 +202,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -255,12 +223,12 @@ function main() {
     };
 
     /* Events */
-    appid_check_form.submit(function() {
+    appid_check_form.submit(function () {
         event.preventDefault();
         check_appid(appid_check_form.serializeArray()[0].value);
     });
 
-    refresh_button.click(function() {
+    refresh_button.click(function () {
         helpers.get_with_spinner_and_callback(entrypoints.history + "/refresh" + "?appid=" + adminKey, refresh_spinner);
     });
 
@@ -297,7 +265,7 @@ function main() {
             class: "location_upsert_send btn btn-default",
             value: "Отправить"
         });
-        cancelButton.click(function() {
+        cancelButton.click(function () {
             form.empty();
         });
 
@@ -309,23 +277,23 @@ function main() {
     };
 
     var location_upsert_form = $("#location_upsert_form");
-    location_upsert_form.submit(function() {
+    location_upsert_form.submit(function () {
         event.preventDefault()
         var params = location_upsert_form.serialize()
         var url = entrypoints.locations + "/upsert"
         $.ajax({
             url: url + "?" + params + "&appid=" + adminKey,
-            success: function(data) {
+            success: function (data) {
                 helpers.logger(data)
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
         })
         refresh_location_list()
     })
 
-    upsert_location_button.click(function() {
+    upsert_location_button.click(function () {
         event.preventDefault()
         refresh_upsert_form(location_upsert_form, 1)
     })
@@ -337,38 +305,44 @@ function main() {
     var weathertable_container = $("#weathertable")
     var weatherchart_container = $("#weatherchart")
 
-    $("form#weather_request").submit(function(event) {
-        var table;
-
+    $("form#weather_request").submit(function (event) {
         event.preventDefault();
         var locationid = $(location_list_model_id + " option:selected").val()
         var wtype = "current"
         helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.LOADING)
+        var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, adminKey)
         $.ajax({
-            url: weather_refresh_url(entrypoints, "200", locationid, wtype, adminKey),
-            success: function(data) {
+            url: download_url,
+            success: function (data) {
                 var jsonData = $.parseJSON(data)
                 var status = jsonData.status
                 var message = jsonData.message
                 var content = jsonData.content
                 weathertable_container.empty()
                 weathertable_container.empty()
-                helpers.logger(data)
+                helpers.logger("Successfully downloaded data from " + download_url)
                 if (status != 200) {
                     helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR)
                     helpers.logger("Request failed with status " + String(status) + " and message: " + message)
                 } else {
-                    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK)
-                    table = build_weather_table(content.history, entrypoints)
+                    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK);
+                    var history_table_data = make_history_table_data(content.history, entrypoints.history);
+                    var history_table_values = history_table_data[0];
+                    var history_table_columns = history_table_data[1];
+                    var table = $("<table>", {
+                        class: "table table-striped"
+                    })
                     weathertable_container.append(table)
                     table.DataTable({
-                        "paging": true,
-                        "pagingType": "full_numbers"
+                        data: history_table_values,
+                        columns: history_table_columns,
+                        paging: true,
+                        pagingType: "full_numbers"
                     })
                     charts.build_weather_chart(weatherchart_container, content.history)
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR)
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
