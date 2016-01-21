@@ -4,14 +4,19 @@ clean:
 build: clean
 	mkdir -p ./data/ui/bundle
 	browserify ./data/ui/scripts/main_index.js > ./data/ui/bundle/index.js
+	browserify ./data/ui/scripts/main_analytics.js > ./data/ui/bundle/analytics.js
 	go generate
 	GOOS=linux GOARCH=amd64 go build -o ./bin/app_linux_amd64
-	docker build -t `printenv DOCKER_IMAGE_NAME`:latest .
+	docker build -t `printenv DOCKER_IMAGE_NAME`:dev .
 push: build
-	docker push `printenv DOCKER_IMAGE_NAME`:latest
-push-release: push
-	docker tag -f `printenv DOCKER_IMAGE_NAME`:latest `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG`
+	docker push `printenv DOCKER_IMAGE_NAME`:dev
+push-dev: push
+	docker tag -f `printenv DOCKER_IMAGE_NAME`:dev `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG`
 	docker push `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG`
 push-stage: push
-	docker tag -f `printenv DOCKER_IMAGE_NAME`:latest `printenv DOCKER_IMAGE_NAME`:stage
+	docker tag -f `printenv DOCKER_IMAGE_NAME`:dev `printenv DOCKER_IMAGE_NAME`:stage
 	docker push `printenv DOCKER_IMAGE_NAME`:stage
+push-stable: push
+	docker tag -f `printenv DOCKER_IMAGE_NAME`:dev `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG`
+	docker tag -f `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG` `printenv DOCKER_IMAGE_NAME`:latest
+	docker push `printenv DOCKER_IMAGE_NAME`:`cat DOCKER_IMAGE_TAG` `printenv DOCKER_IMAGE_NAME`:latest
