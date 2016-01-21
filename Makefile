@@ -1,11 +1,9 @@
 clean:
 	rm -rf ./bin ./bindata
-	rm -rf ./data/ui/bundle
-build: clean
-	mkdir -p ./data/ui/bundle
-	browserify ./data/ui/scripts/main_index.js > ./data/ui/bundle/index.js
-	browserify ./data/ui/scripts/main_analytics.js > ./data/ui/bundle/analytics.js
+	rm -rf ./data/ui/bundle/*
+generate: clean
 	go generate
+build: generate
 	GOOS=linux GOARCH=amd64 go build -o ./bin/app_linux_amd64
 	docker build -t `printenv DOCKER_IMAGE_NAME`:dev .
 push:
