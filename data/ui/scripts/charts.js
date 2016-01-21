@@ -78,17 +78,17 @@ function build_weather_chart(containerObject, historyObject) {
             type: 'spline'
         },
         title: {
-            text: 'Таблица погоды'
+            text: 'Weather chart'
         },
         xAxis: {
             type: 'datetime',
             title: {
-                text: 'Дата'
+                text: 'Date'
             }
         },
         yAxis: {
             title: {
-                text: 'Температура'
+                text: 'Temperature'
             }
         },
         series: chart_series

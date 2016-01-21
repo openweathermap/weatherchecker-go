@@ -23,7 +23,7 @@
 <body>
     <div class="container">
         <nav class="navbar navbar-default">
-            <a class="navbar-brand">Веб-интерфейс Weather Checker</a>
+            <a class="navbar-brand">OWM Weather Checker</a>
         </nav>
         <div class="controls col-sm-6">
             <table class="table">
@@ -34,8 +34,8 @@
                         </td>
                         <td>
                             <form id="appid_check_form">
-                                <input id="appid_check_submit" class="btn btn-primary" type="submit" value="Войти как администратор"></input>
-                                <input id="appid_entry" name="appid" class="btn btn-default" placeholder="Ключ"></input>
+                                <input id="appid_check_submit" class="btn btn-primary" type="submit" value="Administrator login"></input>
+                                <input id="appid_entry" name="appid" class="btn btn-default" placeholder="Key"></input>
                             </form>
                         </td>
                     </tr>
@@ -44,7 +44,7 @@
                             <span id="refresh_spinner"></span>
                         </td>
                         <td>
-                            <button id="refresh_button" class="btn btn-primary" type="button">Сделать свежий срез погоды на сервере</button>
+                            <button id="refresh_button" class="btn btn-primary" type="button">Create fresh data slice</button>
                         </td>
                     </tr>
                     <tr>
@@ -52,7 +52,7 @@
                             <span id="upsert_location_spinner"></span>
                         </td>
                         <td>
-                            <button id="upsert_location" class="btn btn-primary" type="button">Добавить / Редактировать город</button>
+                            <button id="upsert_location" class="btn btn-primary" type="button">Add / edit location</button>
                         </td>
                     </tr>
                     <tr>
@@ -67,7 +67,7 @@
                             <span id="location_data_download_spinner"></span>
                         </td>
                         <td>
-                            <button id="location_data_download" class="btn btn-primary" type="button">Обновить список городов</button>
+                            <button id="location_data_download" class="btn btn-primary" type="button">Refresh location list</button>
                         </td>
                     </tr>
                     <tr>
@@ -76,7 +76,7 @@
                         </td>
                         <td>
                             <form id="weather_request">
-                                <input id="get_weatherdata" class="btn btn-primary" type="submit" value="Загрузить данные"></input>
+                                <input id="get_weatherdata" class="btn btn-primary" type="submit" value="Download data"></input>
                                 <select id="location_list" name="locationid" class="btn btn-default"></select>
                             </form>
                         </td>
