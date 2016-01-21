@@ -6,9 +6,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -293,7 +295,8 @@ func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
 	assetPath := "data" + r.URL.Path
 	asset, err := bindata.Asset(assetPath)
 	if err == nil {
-		w.Header().Set("Content-Type", "text/html")
+		contentType := mime.TypeByExtension(filepath.Ext(assetPath))
+		w.Header().Set("Content-Type", contentType)
 		fmt.Fprintf(w, string(asset))
 	} else {
 		fmt.Fprintf(w, err.Error()+"\n")
