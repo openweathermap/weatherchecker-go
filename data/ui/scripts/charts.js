@@ -1,4 +1,5 @@
-"use strict"
+"use strict";
+
 exports.build_weather_chart = build_weather_chart
 
 function make_providers_list(content) {
