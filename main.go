@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
@@ -33,6 +34,7 @@ type JsonResponse struct {
 var sources = structs.CreateSources()
 
 var mongoDsn string
+var refreshInterval int
 
 var db_instance = db.Db()
 var locations = structs.NewLocationTable(db_instance)
@@ -264,9 +266,15 @@ func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 		wtypes = []string{wtype}
 	}
 
+	historyEntry := RefreshHistoryCore(sources, wtypes)
+	PrintHistoryEntry(historyEntry, w)
+}
+
+func RefreshHistoryCore(sources []structs.SourceEntry, wtypes []string) []structs.HistoryDataEntry {
 	locations_query := locations.ReadLocations()
 	historyEntry := history.CreateHistoryEntry(locations_query, sources, wtypes)
-	PrintHistoryEntry(historyEntry, w)
+
+	return historyEntry
 }
 
 func ClearHistory(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -307,6 +315,7 @@ func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	flag.StringVar(&mongoDsn, "mongo", "mongodb://127.0.0.1:27017/weatherchecker", "MongoDB DSN")
+	flag.IntVar(&refreshInterval, "refresh-interval", 0, "Refresh interval")
 }
 
 func main() {
@@ -395,5 +404,15 @@ func main() {
 	goji.Get(UIEntrypoint, http.RedirectHandler(UIPage, 301))
 	goji.Get(UIEntrypoint+"/", http.RedirectHandler(UIPage, 301))
 	goji.Get("/", http.RedirectHandler(UIPage, 301))
+
+	if refreshInterval > 0 {
+		go func() {
+			for {
+				RefreshHistoryCore(sources, []string{"current", "forecast"})
+				time.Sleep(time.Duration(refreshInterval) * time.Minute)
+			}
+		}()
+	}
+
 	goji.Serve()
 }
