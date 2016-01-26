@@ -8,6 +8,7 @@ var STATUS = {
 
 exports.STATUS = STATUS;
 exports.find_closest = find_closest;
+exports.collectionToMap = collectionToMap;
 exports.create_input_fields = create_input_fields;
 exports.set_spinner_status = set_spinner_status;
 exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
@@ -27,6 +28,19 @@ function find_closest(x, range) {
     };
     return closest;
 };
+
+function collectionToMap(objectCollection, keyName) {
+    var newMap = new Map;
+
+    for (var entry of objectCollection) {
+        var key = entry[keyName];
+        if (key != undefined) {
+            newMap[key] = entry;
+        };
+    };
+
+    return newMap;
+}
 
 function create_input_fields(inputfields_desc) {
     var input_fields = new Array;
