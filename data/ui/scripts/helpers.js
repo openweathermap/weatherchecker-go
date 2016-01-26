@@ -7,6 +7,7 @@ var STATUS = {
 };
 
 exports.STATUS = STATUS;
+exports.find_closest = find_closest;
 exports.create_input_fields = create_input_fields;
 exports.set_spinner_status = set_spinner_status;
 exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
@@ -14,6 +15,17 @@ exports.logger = logger;
 
 function logger(data) {
     console.log(data);
+};
+
+function find_closest(x, range) {
+    var closest = range[0];
+    for (var value of range) {
+        if (Math.abs(value - x) < Math.abs(closest - x)) {
+            closest = value
+        };
+
+    };
+    return closest;
 };
 
 function create_input_fields(inputfields_desc) {
