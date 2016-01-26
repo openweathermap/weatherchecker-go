@@ -43,18 +43,17 @@ function makeSeriesObject(providerObject) {
     return seriesObject
 }
 
-function get_weatherchart_data(historyObject) {
-    if (historyObject == undefined) {
+function get_weatherchart_data(historyDataObject) {
+    if (historyDataObject == undefined) {
         return []
     }
-    var content = historyObject['data']
-    var series = makeSeriesObject(makeProviderObject(content, 'temp'))
+    var series = makeSeriesObject(makeProviderObject(historyDataObject, 'temp'))
 
     return series
 }
 
-function build_weather_chart(containerObject, historyObject) {
-    var chart_series = get_weatherchart_data(historyObject)
+function build_weather_chart(containerObject, historyDataObject) {
+    var chart_series = get_weatherchart_data(historyDataObject)
     containerObject.highcharts({
         chart: {
             type: 'spline'

@@ -1,6 +1,11 @@
 "use strict";
 
+var helpers = require("./helpers.js");
+
 exports.make_history_table_data = make_history_table_data;
+exports.make_city_select_options = make_city_select_options;
+exports.refresh_location_list = refresh_location_list;
+exports.parseOWMhistory = parseOWMhistory;
 
 function make_history_table_data(historyObject, history_entrypoint) {
     var content = historyObject.data;
@@ -62,4 +67,96 @@ function make_history_table_data(historyObject, history_entrypoint) {
     }]
 
     return [values, columns]
+}
+
+function getlocations(dataObject) {
+    var locations = [];
+    var location_list = dataObject['content']['locations'];
+
+    if (location_list != null) {
+        for (var location_entry of location_list) {
+            var entry = {};
+            entry.id = location_entry['objectid'];
+            entry.name = location_entry['city_name'];
+            entry.latitude = location_entry['latitude'];
+            entry.longitude = location_entry['longitude'];
+            locations.push(entry);
+        };
+    };
+
+    return locations;
+};
+
+function make_city_select_options(locationCollection) {
+    var output = [];
+
+    for (var entry of locationCollection) {
+        var newOption = $("<option>", {
+            value: entry.id,
+            lat: entry.latitude,
+            lon: entry.longitude
+        });
+        newOption.append(entry.name);
+        output.push(newOption);
+    };
+    return output;
+};
+
+function refresh_location_list(location_list_model, entrypoints, spinnerContainer, callback) {
+    location_list_model.empty();
+
+    var dataObject = {};
+    var locationCollection = []
+
+    helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function (data) {
+        dataObject = $.parseJSON(data);
+
+        locationCollection = getlocations(dataObject);
+        var options = make_city_select_options(locationCollection);
+
+        for (var option of options) {
+            location_list_model.append(option);
+        };
+        var locationMap = helpers.collectionToMap(locationCollection, 'id');
+        callback(locationMap);
+    })
+};
+
+
+function parseOWMhistory(OWMHistoryObject) {
+    var checkerHistory = []
+
+    var historyList = OWMHistoryObject['list']
+    for (var historyEntry of historyList) {
+        var newEntry = {}
+        newEntry['source'] = 'owm_history'
+        newEntry['measurements'] = []
+
+        var measurement = {}
+        measurement['timestamp'] = historyEntry['dt']
+
+        var measurementData = {}
+        measurementData['temp'] = historyEntry['main']['temp'] - 273.15
+        measurementData['wind_speed'] = historyEntry['wind']['speed']
+        measurementData['humidity'] = historyEntry['main']['humidity']
+        measurementData['pressure'] = historyEntry['main']['pressure']
+
+        measurement['data'] = measurementData
+
+        newEntry['measurements'].push(measurement)
+
+        checkerHistory.push(newEntry)
+    }
+    return checkerHistory
+}
+
+function make_timestamplist(historyObject) {
+    var timestamplist = []
+
+    for (var measurement of historyObject['measurements']) {
+        var timestamp = measurement['timestamp']
+        timestamplist.push(timestamp)
+    }
+
+    return timestamplist
 }
