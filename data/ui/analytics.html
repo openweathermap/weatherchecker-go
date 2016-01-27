@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Weather Checker Analytics</title>
+    <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.10/js/dataTables.bootstrap.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="bundle/analytics.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.10/css/dataTables.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="stylesheets/index.css" />
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-default">
+            <a class="navbar-brand">Weather Checker Analytics</a>
+        </nav>
+        <div id="analytics_controls" class="col-sm-6">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span id="location_download_spinner"></span>
+                        </td>
+                        <td>
+                            <button id="location_download_button" class="btn btn-primary" type="button">Refresh location list</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span id="refresh_forecasts_spinner"></span>
+                        </td>
+                        <td>
+                            <form id="get_weather_form">
+                                <input id="get_weatherdata" class="btn btn-primary" type="submit" value="Download data"></input>
+                                <select id="location_list" name="locationid" class="btn btn-default"></select>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="forecast_chart"></div>
+        <div id="forecast_table" class="table table-striped">
+        </div>
+    </div>
+    <footer>
+        <div class="container">
+            <div class="well well-sm">
+                <p>Copyleft 2015 - 2016, <a href="http://owm.io">OpenWeatherMap, Inc.</a></p>
+                <p>Weather Checker is available under the terms of <a href="https://gnu.org/licenses/agpl.html">GNU Affero General Public License v3</a></p>
+            </div>
+        </div>
+    </footer>
+</body>
