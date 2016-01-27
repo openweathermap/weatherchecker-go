@@ -60,29 +60,34 @@ function main() {
     var appid_check_spinner = $('#appid_check_spinner');
     var refresh_spinner = $('#refresh_spinner');
     var upsert_location_spinner = $('#upsert_location_spinner');
-    var location_data_download_spinner = $('#location_data_download_spinner');
     var get_weatherdata_spinner = $('#get_weatherdata_spinner');
 
     var location_list_model_id = "select#location_list";
     var location_list_model = $(location_list_model_id);
 
     var location_upsert_form = $("#location_upsert_form");
-    var location_data_download_button = $("#location_data_download");
     var weathertable_container = $("#weathertable");
     var weatherchart_container = $("#weatherchart");
     var weather_request_form = $("form#weather_request");
 
     var appid_check_form = $("#appid_check_form");
 
+    var datepickers = $(".datepicker");
+
     var refresh_button = $('#refresh_button');
+    var request_start_picker = $('#request_start_picker');
+    var request_end_picker = $('#request_end_picker');
+    var request_location_select = location_list_model;
     var upsert_location_button = $('#upsert_location');
 
+    var admin_buttons = [refresh_button, upsert_location_button];
+
+
     function refresh_location_list_log() {
-        commonstuff.refresh_location_list(location_list_model, entrypoints, location_data_download_spinner, helpers.logger);
+        commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger);
     }
 
 
-    var admin_buttons = [refresh_button, upsert_location_button];
 
     function disable_admin_buttons() {
         for (var button of admin_buttons) {
@@ -121,17 +126,19 @@ function main() {
         });
     };
 
-    function weather_refresh_url(entrypoints, status, locationid, wtype, adminKey) {
-        return entrypoints.history + "?" + "status=" + status + "&" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey
+    function weather_refresh_url(entrypoints, status, locationid, wtype, request_start, request_end, adminKey) {
+        var url = entrypoints.history + "?" + "status=" + status + "&" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey
+        if (request_start != null) {
+            url = url + '&requeststart=' + String(request_start)
+        }
+        if (request_end != null) {
+            url = url + '&requestend=' + String(request_end)
+        }
+        return url
     };
 
-    /* Actions on page load */
-    refresh_location_list_log();
-    disable_admin_buttons();
-    check_appid("");
-    for (var spinner of[location_data_download_spinner, get_weatherdata_spinner]) {
-        helpers.set_spinner_status(spinner, helpers.STATUS.OK);
-    };
+    /* Model init */
+    datepickers.datetimepicker();
 
     /* Events */
     appid_check_form.submit(function () {
@@ -187,8 +194,7 @@ function main() {
         form.append(buttonarea);
     };
 
-    location_upsert_form.submit(function () {
-        event.preventDefault()
+    function upsert_location() {
         var params = location_upsert_form.serialize()
         var url = entrypoints.locations + "/upsert"
         $.ajax({
@@ -200,16 +206,19 @@ function main() {
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
         })
-        commonstuff.refresh_location_list(location_list_model, entrypoints, location_data_download_spinner, helpers.logger)
+        commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger)
+    }
+
+    location_upsert_form.submit(function (event) {
+        event.preventDefault()
+        upsert_location()
+
     })
 
-    upsert_location_button.click(function () {
+    upsert_location_button.click(function (event) {
         event.preventDefault()
         refresh_upsert_form(location_upsert_form, 1)
     })
-
-
-    location_data_download_button.click(refresh_location_list_log)
 
     function show_data(data) {
         var jsonData = $.parseJSON(data);
@@ -243,7 +252,17 @@ function main() {
     function download_weather_data() {
         var locationid = $(location_list_model_id + " option:selected").val();
         var wtype = "current";
-        var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, adminKey);
+        var request_start = null;
+        var request_end = null;
+        var request_start_momentObject = request_start_picker.data("DateTimePicker").date();
+        var request_end_momentObject = request_end_picker.data("DateTimePicker").date();
+        if (request_start_momentObject != null) {
+            request_start = request_start_momentObject.unix();
+        };
+        if (request_end_momentObject != null) {
+            request_end = request_end_momentObject.unix();
+        };
+        var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
 
         helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
     };
@@ -253,6 +272,31 @@ function main() {
         download_weather_data();
     });
 
+    var start_time = moment().subtract(3, 'days');
+    var end_time = moment();
+
+    request_start_picker.data('DateTimePicker').useCurrent(true)
+    request_end_picker.data('DateTimePicker').useCurrent(true)
+
+    request_start_picker.data('DateTimePicker').date(start_time);
+    request_end_picker.data('DateTimePicker').date(end_time);
+
+    for (var formObject of[request_location_select]) {
+        formObject.on("change", function (event) {
+            weather_request_form.submit();
+        });
+    };
+
+    for (var formObject of[request_start_picker, request_end_picker]) {
+        formObject.on("dp.change", function (event) {
+            weather_request_form.submit();
+        });
+    };
+
+    /* Actions on page load */
+    refresh_location_list_log();
+    disable_admin_buttons();
+    check_appid("");
 };
 
 $(document).ready(main);
