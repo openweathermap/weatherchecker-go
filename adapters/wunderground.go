@@ -126,7 +126,7 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 	pressure, _ := strconv.ParseFloat(pressure_raw, 64)
 	precipitation, _ := strconv.ParseFloat(precipitation_raw, 64)
 	temp := float64(temp_raw)
-	wind := float64(wind_raw)
+	wind, _ := convertUnits(float64(wind_raw), "kph")
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 

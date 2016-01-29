@@ -94,7 +94,8 @@ func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements Meas
 	pressure, _ := strconv.ParseFloat(pressure_raw, 64)
 	precipitation, _ := strconv.ParseFloat(precipitation_raw, 64)
 	temp, _ := strconv.ParseFloat(temp_raw, 64)
-	wind, _ := strconv.ParseFloat(wind_raw, 64)
+	wind_kph, _ := strconv.ParseFloat(wind_raw, 64)
+	wind, _ := convertUnits(float64(wind_kph), "kph")
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
@@ -137,7 +138,8 @@ func WorldweatheronlineAdaptForecast(jsonString string) (measurements Measuremen
 			pressure, _ := strconv.ParseFloat(pressure_raw, 64)
 			precipitation, _ := strconv.ParseFloat(precipitation_raw, 64)
 			temp, _ := strconv.ParseFloat(temp_raw, 64)
-			wind, _ := strconv.ParseFloat(wind_raw, 64)
+			wind_kph, _ := strconv.ParseFloat(wind_raw, 64)
+			wind, _ := convertUnits(float64(wind_kph), "kph")
 
 			measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 		}
