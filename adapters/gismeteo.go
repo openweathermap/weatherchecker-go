@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -11,7 +12,156 @@ import (
 	"github.com/owm-inc/weatherchecker-go/common"
 )
 
-func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray, err error) {
+type GismeteoMinMaxAvg struct {
+	Avg float64 `json:"avg"`
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
+}
+
+type GismeteoWindData struct {
+	Speed float64 `json:"speed"`
+	Trend float64 `json:"trend"`
+}
+
+type GismeteoWeatherDataCommon struct {
+	AirTemp    float64          `json:"air"`
+	WaterTemp  float64          `json:"water"`
+	TimeString string           `json:"time"`
+	Pressure   float64          `json:"pressure"`
+	Wind       GismeteoWindData `json:"wind"`
+}
+
+type GismeteoWeatherData struct {
+	GismeteoWeatherDataCommon
+	Humidity float64 `json:"humidity"`
+}
+
+type GismeteoWeatherDataAggregate struct {
+	GismeteoWeatherDataCommon
+	Humidity GismeteoMinMaxAvg `json:"humidity"`
+}
+
+type GismeteoMoonData struct {
+	Luminosity float64 `json:"luminosity"`
+}
+
+type GismeteoDayData struct {
+	Alias    string                       `json:"alias"`
+	Date     string                       `json:"date"`
+	FA       []GismeteoWeatherData        `json:"fa"`
+	FO       []GismeteoWeatherData        `json:"fo"`
+	MI       GismeteoWeatherDataAggregate `json:"mi"`
+	MA       GismeteoWeatherDataAggregate `json:"ma"`
+	MoonData GismeteoMoonData             `json:"moon"`
+}
+
+type GismeteoCityData struct {
+	UTCOffset string            `json:"gmt"`
+	CityName  string            `json:"name"`
+	DayData   []GismeteoDayData `json:"days"`
+}
+
+type GismeteoInformerPartnerInfo struct {
+	CityIds []int64 `json:"order"`
+}
+
+type GismeteoInformerData struct {
+	WeatherData map[string]GismeteoCityData `json:"weather"`
+	PartnerInfo GismeteoInformerPartnerInfo `json:"partner"`
+}
+
+type GismeteoInformerJson struct {
+	Data []interface{} `json:"data"`
+}
+
+func gismeteoDecode(s string) (GismeteoInformerData, error) {
+	var dataA GismeteoInformerJson
+	var dataB GismeteoInformerData
+	var errA error
+	var errB error
+
+	var byteString = []byte(strings.Trim(strings.Replace(strings.Replace(s, "parseResponse(", "", -1), ");", "", -1), "\n"))
+
+	errA = json.Unmarshal(byteString, &dataA)
+
+	if errA == nil {
+		weatherDataMap := dataA.Data[1]
+
+		temp1, _ := json.Marshal(&weatherDataMap)
+
+		errB = json.Unmarshal(temp1, &dataB)
+
+	}
+
+	return dataB, errB
+}
+
+func GismeteoParseDateString(timeString, utcOffsetString string) (date time.Time, dateErr error) {
+	timeOffset, timeOffsetErr := strconv.ParseInt(utcOffsetString, 10, 64)
+
+	if timeOffsetErr != nil {
+		return date, common.InvalidTimeOffsetString
+	}
+
+	secondsOffset := timeOffset * 3600
+
+	timeArray := strings.Split(timeString, " ")
+	if len(timeArray) != 6 {
+		return date, common.InvalidTimeString
+	}
+	var timeParseErr error
+	var y, mo, d, h, mi, s int64
+	y, timeParseErr = strconv.ParseInt(timeArray[0], 10, 64)
+	mo, timeParseErr = strconv.ParseInt(timeArray[1], 10, 64)
+	d, timeParseErr = strconv.ParseInt(timeArray[2], 10, 64)
+	h, timeParseErr = strconv.ParseInt(timeArray[3], 10, 64)
+	mi, timeParseErr = strconv.ParseInt(timeArray[4], 10, 64)
+	s, timeParseErr = strconv.ParseInt(timeArray[5], 10, 64)
+
+	if timeParseErr != nil {
+		return date, timeParseErr
+	}
+
+	date = time.Date(int(y), time.Month(mo), int(d), int(h), int(mi), int(s), 0, time.FixedZone("", int(secondsOffset)))
+	return date, dateErr
+}
+
+func GismeteoAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			measurements = AdaptStub(jsonString)
+			err = common.AdapterPanicErr
+		}
+	}()
+
+	data, decodeErr := gismeteoDecode(jsonString)
+
+	if decodeErr != nil {
+		return AdaptStub(jsonString), decodeErr
+	}
+
+	cityId := data.PartnerInfo.CityIds[0]
+	cityData := data.WeatherData[strconv.FormatInt(cityId, 10)]
+	currentData := cityData.DayData[0].FA[0]
+
+	timeOffsetRaw := cityData.UTCOffset
+	date, dateErr := GismeteoParseDateString(currentData.TimeString, timeOffsetRaw)
+
+	if dateErr != nil {
+		return nil, dateErr
+	}
+
+	tempC := currentData.AirTemp
+	pressure, _ := convertUnits(currentData.Pressure, "mmHg")
+	windSpeed := currentData.Wind.Speed
+	humidity := currentData.Humidity
+
+	measurements = append(measurements, MeasurementSchema{Timestamp: date.Unix(), Data: Measurement{Temp: tempC, Pressure: pressure, Wind: windSpeed, Humidity: humidity}})
+
+	return measurements, err
+}
+
+func GismeteoAdaptCurrentWeatherHtml(htmlString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(htmlString)

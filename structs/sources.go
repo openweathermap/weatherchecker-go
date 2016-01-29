@@ -31,8 +31,8 @@ func CreateSources() (sources []SourceEntry) {
 	sources = append(sources, SourceEntry{Name: "accuweather", Urls: map[string]string{"current": `http://www.accuweather.com/ru/{{.Location.Iso_country}}/{{.Location.Accuweather_city_name}}/{{.Location.Accuweather_id}}/hourly-weather-forecast/{{.Location.Accuweather_id}}`,
 		"forecast": `http://www.accuweather.com/ru/{{.Location.Iso_country}}/{{.Location.Accuweather_city_name}}/{{.Location.Accuweather_id}}/hourly-weather-forecast/{{.Location.Accuweather_id}}`}, Keys: Keyring{}})
 
-	sources = append(sources, SourceEntry{Name: "gismeteo", Urls: map[string]string{"current": `http://beta.gismeteo.ru/weather-{{.Location.Gismeteo_city_name}}-{{.Location.Gismeteo_id}}/`,
-		"forecast": `http://beta.gismeteo.ru/weather-{{.Location.Gismeteo_city_name}}-{{.Location.Gismeteo_id}}/`}, Keys: Keyring{}})
+	sources = append(sources, SourceEntry{Name: "gismeteo", Urls: map[string]string{"current": `https://www.gismeteo.ru/api/informer/data.js/{{.Source.Keys.Key}}/180x150-1/ru/?city={{.Location.Gismeteo_id}}`,
+		"forecast": `https://www.gismeteo.ru/api/informer/data.js/{{.Source.Keys.Key}}/180x150-1/ru/?city={{.Location.Gismeteo_id}}`}, Keys: Keyring{Key: os.Getenv("GISMETEO_KEY")}})
 
 	return sources
 }
