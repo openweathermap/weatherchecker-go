@@ -14,7 +14,6 @@
     <script src="bundle/index.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.10/css/dataTables.bootstrap.min.css" />
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
     <link rel="stylesheet" href="stylesheets/index.css" />
 </head>
 
@@ -23,6 +22,28 @@
         <header>
             <nav class="navbar navbar-default">
                 <a class="navbar-brand">OWM Weather Checker</a>
+                <div class="collapse navbar-collapse">
+                    <form class="navbar-form navbar-right" id="weather_request">
+                        <div class="col-lg-4">
+                            <div id='request_start_picker' class="input-group date datepicker">
+                                <input name="requeststart" type='text' class="form-control" />
+                                <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div id='request_end_picker' class="input-group date datepicker">
+                                <input name="requestend" type='text' class="form-control" />
+                                <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                </span>
+                            </div>
+                        </div>
+                        <select id="location_list" name="locationid" class="btn btn-default"></select>
+                        <span class="spinner" id="get_weatherdata_spinner"></span>
+                    </form>
+                </div>
             </nav>
         </header>
         <div class="controls col-sm-9">
@@ -60,32 +81,6 @@
                         </td>
                         <td>
                             <form id="location_upsert_form"></form>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <span id="get_weatherdata_spinner"></span>
-                        </td>
-                        <td>
-                            <form id="weather_request">
-                                <div class="col-lg-4">
-                                    <div id='request_start_picker' class="input-group date datepicker">
-                                        <input name="requeststart" type='text' class="form-control" />
-                                        <span class="input-group-addon">
-                                            <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <div id='request_end_picker' class="input-group date datepicker">
-                                        <input name="requestend" type='text' class="form-control" />
-                                        <span class="input-group-addon">
-                                            <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <select id="location_list" name="locationid" class="btn btn-default"></select>
-                            </form>
                         </td>
                     </tr>
                 </tbody>

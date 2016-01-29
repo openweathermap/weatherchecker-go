@@ -297,6 +297,7 @@ function main() {
     refresh_location_list_log();
     disable_admin_buttons();
     check_appid("");
+    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK)
 };
 
 $(document).ready(main);

@@ -66,17 +66,17 @@ function set_spinner_status(spinnerContainer, status) {
     spinnerContainer.empty();
     var iconClass = "";
     switch (status) {
-    case STATUS.OK: // OK
-        iconClass = "fa fa-check";
-        break;
-    case STATUS.LOADING: // Loading
-        iconClass = "fa fa-spin fa-refresh";
-        break;
-    case STATUS.ERROR: // Error
-        iconClass = "fa fa-minus-circle";
-        break;
-    default:
-        return;
+        case STATUS.OK: // OK
+            iconClass = "glyphicon glyphicon-ok";
+            break;
+        case STATUS.LOADING: // Loading
+            iconClass = "glyphicon glyphicon-refresh";
+            break;
+        case STATUS.ERROR: // Error
+            iconClass = "glyphicon glyphicon-remove";
+            break;
+        default:
+            return;
     };
     spinnerContainer.append($('<span>', {
         class: iconClass
