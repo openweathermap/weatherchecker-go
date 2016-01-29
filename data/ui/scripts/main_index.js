@@ -295,7 +295,15 @@ function main() {
 
     /* Actions on page load */
     refresh_location_list_log();
-    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK)
+    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT)
+
+    var selectCityEntry = $('<option>', {
+        disabled: true,
+        selected: true
+    });
+    selectCityEntry.append("(select your city)");
+
+    location_list_model.prepend(selectCityEntry);
 };
 
 $(document).ready(main);

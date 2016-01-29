@@ -3,7 +3,8 @@
 var STATUS = {
     OK: 0,
     LOADING: 1,
-    ERROR: 2
+    ERROR: 2,
+    HAND_LEFT: 3
 };
 
 exports.STATUS = STATUS;
@@ -74,6 +75,9 @@ function set_spinner_status(spinnerContainer, status) {
             break;
         case STATUS.ERROR: // Error
             iconClass = "glyphicon glyphicon-remove";
+            break;
+        case STATUS.HAND_LEFT: // Select
+            iconClass = "glyphicon glyphicon-hand-left";
             break;
         default:
             return;
