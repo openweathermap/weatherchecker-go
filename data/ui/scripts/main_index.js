@@ -57,6 +57,8 @@ function main() {
         Placeholder: "ObjectID (для редактирования)"
     }].concat(location_add_inputfields);
 
+    var landing_container = $('#landing')
+
     var appid_check_spinner = $('#appid_check_spinner');
     var refresh_spinner = $('#refresh_spinner');
     var upsert_location_spinner = $('#upsert_location_spinner');
@@ -225,7 +227,7 @@ function main() {
         var status = jsonData.status;
         var message = jsonData.message;
         var content = jsonData['content'];
-        weathertable_container.empty();
+        landing_container.empty();
         weathertable_container.empty();
         if (status != 200) {
             helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR);
