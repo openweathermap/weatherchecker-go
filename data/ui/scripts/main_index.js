@@ -106,7 +106,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function (data) {
+            success: function(data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -118,7 +118,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function(jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -141,12 +141,12 @@ function main() {
     datepickers.datetimepicker();
 
     /* Events */
-    appid_check_form.submit(function () {
+    appid_check_form.submit(function() {
         event.preventDefault();
         check_appid(appid_check_form.serializeArray()[0].value);
     });
 
-    refresh_button.click(function () {
+    refresh_button.click(function() {
         helpers.get_with_spinner_and_callback(entrypoints.history + "/refresh" + "?appid=" + adminKey, refresh_spinner);
     });
 
@@ -183,7 +183,7 @@ function main() {
             class: "location_upsert_send btn btn-default",
             value: "Отправить"
         });
-        cancelButton.click(function () {
+        cancelButton.click(function() {
             form.empty();
         });
 
@@ -199,23 +199,23 @@ function main() {
         var url = entrypoints.locations + "/upsert"
         $.ajax({
             url: url + "?" + params + "&appid=" + adminKey,
-            success: function (data) {
+            success: function(data) {
                 helpers.logger(data)
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function(jqXHR, textStatus, errorThrown) {
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus)
             }
         })
         commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger)
     }
 
-    location_upsert_form.submit(function (event) {
+    location_upsert_form.submit(function(event) {
         event.preventDefault()
         upsert_location()
 
     })
 
-    upsert_location_button.click(function (event) {
+    upsert_location_button.click(function(event) {
         event.preventDefault()
         refresh_upsert_form(location_upsert_form, 1)
     })
@@ -267,7 +267,7 @@ function main() {
         helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
     };
 
-    weather_request_form.submit(function (event) {
+    weather_request_form.submit(function(event) {
         event.preventDefault();
         download_weather_data();
     });
@@ -282,13 +282,13 @@ function main() {
     request_end_picker.data('DateTimePicker').date(end_time);
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function (event) {
+        formObject.on("change", function(event) {
             weather_request_form.submit();
         });
     };
 
     for (var formObject of[request_start_picker, request_end_picker]) {
-        formObject.on("dp.change", function (event) {
+        formObject.on("dp.change", function(event) {
             weather_request_form.submit();
         });
     };

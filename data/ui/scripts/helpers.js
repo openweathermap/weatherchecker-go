@@ -88,7 +88,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
     $.ajax({
         url: requestUrl,
         dataType: "text",
-        success: function (data) {
+        success: function(data) {
             var jsonData = $.parseJSON(data);
             var status = jsonData.status;
 
@@ -104,7 +104,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
 
             logger(data);
         },
-        error: function (data) {
+        error: function(data) {
             set_spinner_status(spinnerContainer, STATUS.ERROR);
         }
     });
