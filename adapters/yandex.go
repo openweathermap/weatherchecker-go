@@ -3,6 +3,8 @@ package adapters
 import (
 	"encoding/xml"
 	"time"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type YandexWeatherCondition struct {
@@ -58,7 +60,7 @@ func YandexAdaptCurrentWeather(xmlString string) (measurements MeasurementArray,
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(xmlString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 

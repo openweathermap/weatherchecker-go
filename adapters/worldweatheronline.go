@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type WorldweatheronlineConditionBase struct {
@@ -72,7 +74,7 @@ func WorldweatheronlineAdaptCurrentWeather(jsonString string) (measurements Meas
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 
@@ -106,7 +108,7 @@ func WorldweatheronlineAdaptForecast(jsonString string) (measurements Measuremen
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 	data, decodeErr := worldweatheronlineDecode(jsonString)

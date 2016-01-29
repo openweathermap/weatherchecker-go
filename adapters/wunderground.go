@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type WundergroundResponseStruct struct {
@@ -105,7 +107,7 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 	data, decodeErr := wundergroundDecode(jsonString)

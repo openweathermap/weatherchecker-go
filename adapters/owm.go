@@ -2,6 +2,8 @@ package adapters
 
 import (
 	"encoding/json"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type OwmLocationCoords struct {
@@ -92,7 +94,7 @@ func OwmAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, e
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 
@@ -119,7 +121,7 @@ func OwmAdaptForecast(jsonString string) (measurements MeasurementArray, err err
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 	data, decodeErr := owmForecastDecode(jsonString)

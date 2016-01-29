@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 func AccuweatherIsMetric(htmlString string) (isMetric bool, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			isMetric = false
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 	htmlDoc, htmlErr := goquery.NewDocumentFromReader(strings.NewReader(htmlString))
@@ -34,7 +36,7 @@ func AccuweatherAdaptCurrentHumidity(htmlString string) (humidity float64, err e
 	defer func() {
 		if r := recover(); r != nil {
 			humidity = float64(0)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 	htmlDoc, htmlErr := goquery.NewDocumentFromReader(strings.NewReader(htmlString))
@@ -67,7 +69,7 @@ func AccuweatherAdaptCurrentTemp(htmlString string) (float64, error) {
 	nodeGroup1 := htmlDoc.Find(`tr.temp`).Find(`td.first-col`).Contents().Nodes
 	nodeIndex1 := 0
 	if len(nodeGroup1)-1 < nodeIndex1 {
-		return float64(0), nodeErr
+		return float64(0), common.NodeErr
 	}
 	node1 := nodeGroup1[nodeIndex1]
 
@@ -88,7 +90,7 @@ func AccuweatherAdaptCurrentWeather(htmlString string) (measurements Measurement
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(htmlString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 

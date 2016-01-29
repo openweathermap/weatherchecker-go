@@ -1,8 +1,6 @@
 package adapters
 
-import (
-	"errors"
-)
+import "github.com/owm-inc/weatherchecker-go/common"
 
 type Measurement struct {
 	Humidity      float64 `json:"humidity"`
@@ -19,12 +17,9 @@ type MeasurementSchema struct {
 
 type MeasurementArray []MeasurementSchema
 
-var AdapterPanicErr = errors.New("Adapter panicking")
-var nodeErr = errors.New(`Node not found`)
-
 func AdaptStub(s string) MeasurementArray { return make(MeasurementArray, 0) }
 func AdaptNull(s string) (measurements MeasurementArray, err error) {
-	return AdaptStub(s), errors.New("No adapt function")
+	return AdaptStub(s), common.NoAdaptFunc
 }
 
 func AdaptWeather(sourceName string, wtypeName string, data string) (measurements MeasurementArray, err error) {

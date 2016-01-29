@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+
+	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 func GismeteoAdaptCurrentWeather(htmlString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(htmlString)
-			err = AdapterPanicErr
+			err = common.AdapterPanicErr
 		}
 	}()
 
