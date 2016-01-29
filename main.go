@@ -1,6 +1,7 @@
 package main
 
 //go:generate browserify ./data/ui/scripts/main_index.js -o ./data/ui/bundle/index.js
+//go:generate browserify ./data/ui/scripts/main_admin.js -o ./data/ui/bundle/admin.js
 //go:generate browserify ./data/ui/scripts/main_analytics.js -o ./data/ui/bundle/analytics.js
 //go:generate go-bindata -o "bindata/bindata.go" -pkg "bindata" "data/..."
 import (

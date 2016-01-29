@@ -11,7 +11,7 @@
     <script src="https://cdn.datatables.net/1.10.10/js/dataTables.bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
-    <script src="bundle/index.js"></script>
+    <script src="bundle/admin.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.10/css/dataTables.bootstrap.min.css" />
     <link rel="stylesheet" href="stylesheets/index.css" />
@@ -21,34 +21,48 @@
     <div class="container">
         <header>
             <nav class="navbar navbar-default">
-                <a class="navbar-brand">OWM Weather Checker</a>
-                <div class="collapse navbar-collapse">
-                    <form class="navbar-form navbar-right" id="weather_request">
-                        <div class="col-lg-4">
-                            <div id='request_start_picker' class="input-group date datepicker">
-                                <input name="requeststart" type='text' class="form-control" />
-                                <span class="input-group-addon">
-                                            <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div id='request_end_picker' class="input-group date datepicker">
-                                <input name="requestend" type='text' class="form-control" />
-                                <span class="input-group-addon">
-                                            <span class="glyphicon glyphicon-calendar"></span>
-                                </span>
-                            </div>
-                        </div>
-                        <select id="location_list" name="locationid" class="btn btn-default"></select>
-                        <span class="spinner" id="get_weatherdata_spinner"></span>
-                    </form>
-                </div>
+                <a class="navbar-brand">Weather Checker Admin</a>
             </nav>
         </header>
-        <div id="weatherchart">
-        </div>
-        <div id="weathertable" class="table table-striped">
+        <div class="controls col-sm-9">
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <td>
+                            <span id="appid_check_spinner"></span>
+                        </td>
+                        <td>
+                            <form id="appid_check_form">
+                                <input id="appid_check_submit" class="btn btn-primary" type="submit" value="Administrator login"></input>
+                                <input id="appid_entry" name="appid" class="btn btn-default" placeholder="Key"></input>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span id="refresh_spinner"></span>
+                        </td>
+                        <td>
+                            <button id="refresh_button" class="btn btn-primary" type="button">Create fresh data slice</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span id="upsert_location_spinner"></span>
+                        </td>
+                        <td>
+                            <button id="upsert_location" class="btn btn-primary" type="button">Add / edit location</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                        </td>
+                        <td>
+                            <form id="location_upsert_form"></form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
     <footer>

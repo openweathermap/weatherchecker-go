@@ -6,7 +6,6 @@ var settings = require("./settings.js");
 
 function main() {
     var entrypoints = settings.entrypoints;
-
     var adminKey = "";
 
     var location_add_inputfields = [{
@@ -220,82 +219,10 @@ function main() {
         refresh_upsert_form(location_upsert_form, 1)
     })
 
-    function show_data(data) {
-        var jsonData = $.parseJSON(data);
-        var status = jsonData.status;
-        var message = jsonData.message;
-        var content = jsonData['content'];
-        weathertable_container.empty();
-        weathertable_container.empty();
-        if (status != 200) {
-            helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR);
-            helpers.logger("Request failed with status " + String(status) + " and message: " + message);
-        } else {
-            helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK);
-            var history_table_data = commonstuff.make_history_table_data(content['history'], entrypoints['history']);
-            var history_table_values = history_table_data[0];
-            var history_table_columns = history_table_data[1];
-            var table = $("<table>", {
-                class: "table table-striped"
-            });
-            weathertable_container.append(table);
-            table.DataTable({
-                data: history_table_values,
-                columns: history_table_columns,
-                paging: true,
-                pagingType: "full_numbers"
-            });
-            charts.build_weather_chart(weatherchart_container, content['history']['data']);
-        };
-    };
-
-    function download_weather_data() {
-        var locationid = $(location_list_model_id + " option:selected").val();
-        var wtype = "current";
-        var request_start = null;
-        var request_end = null;
-        var request_start_momentObject = request_start_picker.data("DateTimePicker").date();
-        var request_end_momentObject = request_end_picker.data("DateTimePicker").date();
-        if (request_start_momentObject != null) {
-            request_start = request_start_momentObject.unix();
-        };
-        if (request_end_momentObject != null) {
-            request_end = request_end_momentObject.unix();
-        };
-        var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
-
-        helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
-    };
-
-    weather_request_form.submit(function(event) {
-        event.preventDefault();
-        download_weather_data();
-    });
-
-    var start_time = moment().subtract(3, 'days');
-    var end_time = moment();
-
-    request_start_picker.data('DateTimePicker').useCurrent(true)
-    request_end_picker.data('DateTimePicker').useCurrent(true)
-
-    request_start_picker.data('DateTimePicker').date(start_time);
-    request_end_picker.data('DateTimePicker').date(end_time);
-
-    for (var formObject of[request_location_select]) {
-        formObject.on("change", function(event) {
-            weather_request_form.submit();
-        });
-    };
-
-    for (var formObject of[request_start_picker, request_end_picker]) {
-        formObject.on("dp.change", function(event) {
-            weather_request_form.submit();
-        });
-    };
-
     /* Actions on page load */
     refresh_location_list_log();
-    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK)
+    disable_admin_buttons();
+    check_appid("");
 };
 
 $(document).ready(main);
