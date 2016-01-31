@@ -19,8 +19,8 @@ function make_history_table_data(historyObject, history_entrypoint) {
             }) + "'>Open</a>",
             "source": history_entry.source,
             "raw_link": "N/A",
-            "dt": new Date(history_entry.measurements[0].timestamp * 1000).toISOString(),
-            "request_dt": new Date(history_entry.request_time * 1000).toISOString(),
+            "dt": moment.unix(history_entry.measurements[0].timestamp).format('YYYY-MM-DD HH:mm ZZ'),
+            "request_dt": moment.unix(history_entry.request_time).format('YYYY-MM-DD HH:mm ZZ'),
             "temp": history_entry.measurements[0].data.temp.toFixed(1),
             "pressure": history_entry.measurements[0].data.pressure.toFixed(1),
             "humidity": history_entry.measurements[0].data.humidity.toFixed(1),
@@ -35,20 +35,11 @@ function make_history_table_data(historyObject, history_entrypoint) {
     };
 
     var columns = [{
-        data: "json_link",
-        title: "DB entry"
-    }, {
         data: "source",
         title: "Provider"
     }, {
-        data: "raw_link",
-        title: "Source"
-    }, {
         data: "dt",
         title: "Measurement date"
-    }, {
-        data: "request_dt",
-        title: "Request date"
     }, {
         data: "temp",
         title: "Temperature, C"
