@@ -9,54 +9,6 @@ function main() {
 
     var adminKey = "";
 
-    var location_add_inputfields = [{
-        Name: "city_name",
-        Default: "",
-        Placeholder: "Название города"
-    }, {
-        Name: "iso_country",
-        Default: "",
-        Placeholder: "Код страны"
-    }, {
-        Name: "country_name",
-        Default: "",
-        Placeholder: "Название страны"
-    }, {
-        Name: "latitude",
-        Default: "",
-        Placeholder: "Широта"
-    }, {
-        Name: "longitude",
-        Default: "",
-        Placeholder: "Долгота"
-    }, {
-        Name: "accuweather_id",
-        Default: "",
-        Placeholder: "ID AccuWeather"
-    }, {
-        Name: "accuweather_city_name",
-        Default: "",
-        Placeholder: "Название города AccuWeather"
-    }, {
-        Name: "gismeteo_id",
-        Default: "",
-        Placeholder: "ID Gismeteo"
-    }, {
-        Name: "gismeteo_city_name",
-        Default: "",
-        Placeholder: "Название города Gismeteo"
-    }, {
-        Name: "yandex_id",
-        Default: "",
-        Placeholder: "ID Яндекс"
-    }];
-
-    var location_update_inputfields = [{
-        Name: "entryid",
-        Default: "",
-        Placeholder: "ObjectID (для редактирования)"
-    }].concat(location_add_inputfields);
-
     var landing_container = $('#landing')
 
     var appid_check_spinner = $('#appid_check_spinner');
@@ -108,7 +60,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function(data) {
+            success: function (data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -120,7 +72,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -143,85 +95,6 @@ function main() {
     datepickers.datetimepicker();
 
     /* Events */
-    appid_check_form.submit(function() {
-        event.preventDefault();
-        check_appid(appid_check_form.serializeArray()[0].value);
-    });
-
-    refresh_button.click(function() {
-        helpers.get_with_spinner_and_callback(entrypoints.history + "/refresh" + "?appid=" + adminKey, refresh_spinner);
-    });
-
-    function refresh_upsert_form(form, upsert_type) {
-        form.empty();
-
-        var inputarea = $('<div>', {
-            class: 'inputarea'
-        });
-        var inputfields = [];
-        if (upsert_type == 0) {
-            inputfields = helpers.create_input_fields(location_add_inputfields);
-        } else {
-            inputfields = helpers.create_input_fields(location_update_inputfields);
-        }
-        for (var field of inputfields) {
-            var group = $('<div>', {
-                class: 'form-group'
-            });
-            group.append(field);
-            inputarea.append(group);
-        };
-
-        var buttonarea = $('<div>', {
-            class: 'buttonarea'
-        });
-        var cancelButton = $("<input>", {
-            type: "button",
-            class: "location_upsert_cancel btn btn-danger",
-            value: "Отмена"
-        });
-        var sendButton = $("<input>", {
-            type: "submit",
-            class: "location_upsert_send btn btn-default",
-            value: "Отправить"
-        });
-        cancelButton.click(function() {
-            form.empty();
-        });
-
-        buttonarea.append(cancelButton);
-        buttonarea.append(sendButton);
-
-        form.append(inputarea);
-        form.append(buttonarea);
-    };
-
-    function upsert_location() {
-        var params = location_upsert_form.serialize()
-        var url = entrypoints.locations + "/upsert"
-        $.ajax({
-            url: url + "?" + params + "&appid=" + adminKey,
-            success: function(data) {
-                helpers.logger(data)
-            },
-            error: function(jqXHR, textStatus, errorThrown) {
-                helpers.logger("Ошибка запроса к " + url + ":   " + textStatus)
-            }
-        })
-        commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger)
-    }
-
-    location_upsert_form.submit(function(event) {
-        event.preventDefault()
-        upsert_location()
-
-    })
-
-    upsert_location_button.click(function(event) {
-        event.preventDefault()
-        refresh_upsert_form(location_upsert_form, 1)
-    })
-
     function show_data(data) {
         var jsonData = $.parseJSON(data);
         var status = jsonData.status;
@@ -269,7 +142,7 @@ function main() {
         helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
     };
 
-    weather_request_form.submit(function(event) {
+    weather_request_form.submit(function (event) {
         event.preventDefault();
         download_weather_data();
     });
@@ -284,13 +157,13 @@ function main() {
     request_end_picker.data('DateTimePicker').date(end_time);
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function(event) {
+        formObject.on("change", function (event) {
             weather_request_form.submit();
         });
     };
 
     for (var formObject of[request_start_picker, request_end_picker]) {
-        formObject.on("dp.change", function(event) {
+        formObject.on("dp.change", function (event) {
             weather_request_form.submit();
         });
     };
