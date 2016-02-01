@@ -126,15 +126,18 @@ function main() {
 
     function download_weather_data() {
         var locationid = $(location_list_model_id + " option:selected").val();
+        if (locationid == undefined) {
+            return;
+        };
         var wtype = "current";
-        var request_start = null;
-        var request_end = null;
+        var request_start = -1;
+        var request_end = -1;
         var request_start_momentObject = request_start_picker.data("DateTimePicker").date();
         var request_end_momentObject = request_end_picker.data("DateTimePicker").date();
-        if (request_start_momentObject != null) {
+        if (request_start_momentObject != -1) {
             request_start = request_start_momentObject.unix();
         };
-        if (request_end_momentObject != null) {
+        if (request_end_momentObject != -1) {
             request_end = request_end_momentObject.unix();
         };
         var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
