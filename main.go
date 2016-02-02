@@ -303,15 +303,17 @@ func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey strin
 }
 
 func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
-	urlPath := r.URL.Path
-	if urlPath == "/ui/" {
-		urlPath = "/ui/index.html"
-	}
-	if urlPath == "/ui/admin/" {
-		urlPath = "/ui/admin.html"
+	var assetPath string
+
+	switch r.URL.Path {
+	case "/ui/":
+		assetPath = "data/ui/index.html"
+	case "/ui/admin/":
+		assetPath = "data/ui/admin.html"
+	default:
+		assetPath = "data" + r.URL.Path
 	}
 
-	assetPath := "data" + urlPath
 	asset, err := bindata.Asset(assetPath)
 	if err == nil {
 		contentType := mime.TypeByExtension(filepath.Ext(assetPath))
