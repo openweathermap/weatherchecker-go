@@ -303,7 +303,15 @@ func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey strin
 }
 
 func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
-	assetPath := "data" + r.URL.Path
+	urlPath := r.URL.Path
+	if urlPath == "/ui/" {
+		urlPath = "/ui/index.html"
+	}
+	if urlPath == "/ui/admin/" {
+		urlPath = "/ui/admin.html"
+	}
+
+	assetPath := "data" + urlPath
 	asset, err := bindata.Asset(assetPath)
 	if err == nil {
 		contentType := mime.TypeByExtension(filepath.Ext(assetPath))
@@ -350,7 +358,6 @@ func main() {
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
 
 	const UIEntrypoint = "/ui"
-	const UIPage = UIEntrypoint + "/index.html"
 
 	goji.Use(Api)
 	goji.Get(UIEntrypoint+"/*", GetPath)
@@ -402,9 +409,7 @@ func main() {
 		})
 	}
 
-	goji.Get(UIEntrypoint, http.RedirectHandler(UIPage, 301))
-	goji.Get(UIEntrypoint+"/", http.RedirectHandler(UIPage, 301))
-	goji.Get("/", http.RedirectHandler(UIPage, 301))
+	goji.Get("/", http.RedirectHandler(UIEntrypoint+"/", 301))
 
 	if refreshInterval > 0 {
 		go func() {
