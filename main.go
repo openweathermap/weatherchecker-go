@@ -44,6 +44,10 @@ var history = structs.NewWeatherHistory(db_instance)
 func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	data, _ := json.Marshal(stuff)
 	jsonString := string(data)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	fmt.Fprintf(w, jsonString)
 }
 
@@ -286,7 +290,6 @@ func ClearHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 
 func Api(c *web.C, h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
