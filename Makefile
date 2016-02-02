@@ -6,6 +6,9 @@ generate: clean
 build: generate
 	GOOS=linux GOARCH=amd64 go build -o ./bin/app_linux_amd64
 	docker build -t `printenv DOCKER_IMAGE_NAME`:dev .
+	docker-compose build
+run: build
+	docker-compose up -d
 push:
 	docker push `printenv DOCKER_IMAGE_NAME`:dev
 push-dev: push

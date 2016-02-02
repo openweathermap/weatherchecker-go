@@ -1,0 +1,17 @@
+db:
+    image: mongo:3.2
+    # volumes:
+    #     - ./volumes/db/data/db:/data/db
+backend:
+    build: .
+    command: -mongo=mongodb://db/weatherchecker
+    links:
+        - db
+    environment:
+        ADMIN_PASS: admin
+frontend:
+    build: ./.docker/nginx
+    links:
+        - backend
+    ports:
+        - "80:80"
