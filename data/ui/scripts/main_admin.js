@@ -106,9 +106,8 @@ function main() {
         $.ajax({
             url: url + "?appid=" + appid,
             success: function(data) {
-                helpers.logger(data)
-                var content = $.parseJSON(data)
-                if (content.status == 200) {
+                helpers.logger(data);
+                if (data.status == 200) {
                     adminKey = appid_check_form.serializeArray()[0].value;
                     helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.OK);
                     enable_admin_buttons();
