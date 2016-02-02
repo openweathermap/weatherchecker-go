@@ -9,6 +9,8 @@ function main() {
 
     var adminKey = "";
 
+    var datepickers = $('.daterange');
+
     var landing_container = $('#landing')
 
     var appid_check_spinner = $('#appid_check_spinner');
@@ -26,11 +28,9 @@ function main() {
 
     var appid_check_form = $("#appid_check_form");
 
-    var datepickers = $(".datepicker");
-
     var refresh_button = $('#refresh_button');
-    var request_start_picker = $('#request_start_picker');
-    var request_end_picker = $('#request_end_picker');
+    var request_range_picker = $('#request_range_picker');
+    var request_range_span = $('#request_range_span')
     var request_location_select = location_list_model;
     var upsert_location_button = $('#upsert_location');
 
@@ -92,7 +92,13 @@ function main() {
     };
 
     /* Model init */
-    datepickers.datetimepicker();
+    datepickers.daterangepicker({
+        timePicker: true,
+        timePicker24Hour: true,
+        locale: {
+            format: "YYYY-MM-DD HH:mm"
+        }
+    });
 
     /* Events */
     function show_data(data) {
@@ -126,23 +132,20 @@ function main() {
 
     function download_weather_data() {
         var locationid = $(location_list_model_id + " option:selected").val();
-        if (locationid == undefined) {
-            return;
-        };
         var wtype = "current";
-        var request_start = -1;
-        var request_end = -1;
-        var request_start_momentObject = request_start_picker.data("DateTimePicker").date();
-        var request_end_momentObject = request_end_picker.data("DateTimePicker").date();
-        if (request_start_momentObject != -1) {
-            request_start = request_start_momentObject.unix();
-        };
-        if (request_end_momentObject != -1) {
-            request_end = request_end_momentObject.unix();
-        };
-        var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
 
-        helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
+        var request_start_momentObject = request_range_picker.data("daterangepicker").startDate;
+        var request_end_momentObject = request_range_picker.data("daterangepicker").endDate;
+        request_range_span.html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+
+        var request_start = request_start_momentObject.unix();
+        var request_end = request_end_momentObject.unix();
+
+        if (locationid != "") {
+            var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
+            show_shim();
+            helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
+        };
     };
 
     weather_request_form.submit(function (event) {
@@ -150,14 +153,11 @@ function main() {
         download_weather_data();
     });
 
-    var start_time = moment().subtract(3, 'days');
-    var end_time = moment();
-
-    request_start_picker.data('DateTimePicker').useCurrent(true)
-    request_end_picker.data('DateTimePicker').useCurrent(true)
-
-    request_start_picker.data('DateTimePicker').date(start_time);
-    request_end_picker.data('DateTimePicker').date(end_time);
+    function make_request_range_picker_span() {
+        var request_start_momentObject = request_range_picker.data("daterangepicker").startDate;
+        var request_end_momentObject = request_range_picker.data("daterangepicker").endDate;
+        request_range_span.html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+    };
 
     for (var formObject of[request_location_select]) {
         formObject.on("change", function (event) {
@@ -165,19 +165,29 @@ function main() {
         });
     };
 
-    for (var formObject of[request_start_picker, request_end_picker]) {
-        formObject.on("dp.change", function (event) {
-            weather_request_form.submit();
-        });
-    };
+
+    request_range_picker.on("apply.daterangepicker", function(event) {
+        make_request_range_picker_span();
+
+        weather_request_form.submit();
+    });
+
 
     /* Actions on page load */
+    var start_time = moment().subtract(3, 'days');
+    var end_time = moment();
+
+    request_range_picker.data('daterangepicker').setStartDate(start_time);
+    request_range_picker.data('daterangepicker').setEndDate(end_time);
+    make_request_range_picker_span();
+
     refresh_location_list_log();
     helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT)
 
     var selectCityEntry = $('<option>', {
         disabled: true,
-        selected: true
+        selected: true,
+        value: ""
     });
     selectCityEntry.append("(select your city)");
 
