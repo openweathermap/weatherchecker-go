@@ -13,6 +13,8 @@ function main() {
 
     var landing_container = $('#landing')
 
+    var loading_shim_container = $('#loading_shim');
+
     var appid_check_spinner = $('#appid_check_spinner');
     var refresh_spinner = $('#refresh_spinner');
     var upsert_location_spinner = $('#upsert_location_spinner');
@@ -101,13 +103,30 @@ function main() {
     });
 
     /* Events */
+    function empty_body() {
+        landing_container.empty();
+        loading_shim_container.empty();
+        weatherchart_container.empty();
+        weathertable_container.empty();
+    };
+
+    function show_shim() {
+        empty_body();
+
+        var shim_spinner = $('<div>', {
+            class: "loading_shim_spinner"
+        });
+        shim_spinner.append("Loading...");
+
+        loading_shim_container.append(shim_spinner);
+    }
+
     function show_data(data) {
         var jsonData = $.parseJSON(data);
         var status = jsonData.status;
         var message = jsonData.message;
         var content = jsonData['content'];
-        landing_container.empty();
-        weathertable_container.empty();
+        empty_body();
         if (status != 200) {
             helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR);
             helpers.logger("Request failed with status " + String(status) + " and message: " + message);
