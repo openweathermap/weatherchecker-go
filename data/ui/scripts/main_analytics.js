@@ -34,7 +34,7 @@ function main() {
 
     // Funcs
     function refresh_location_list_log() {
-        commonstuff.refresh_location_list(location_list_model, entrypoints, location_download_spinner, function (locMap) {
+        commonstuff.refresh_location_list(location_list_model, entrypoints, location_download_spinner, function(locMap) {
             locationMap = locMap;
         });
     };
@@ -56,7 +56,7 @@ function main() {
 
         var historyRequestUrl = "http://history.openweathermap.org/data/2.5/history/city" + "?" + $.param(historyRequestParams);
 
-        helpers.get_with_spinner_and_callback(historyRequestUrl, null, function (data) {
+        helpers.get_with_spinner_and_callback(historyRequestUrl, null, function(data) {
             var jsonData = $.parseJSON(data)
             var checkerHistory = commonstuff.parseOWMhistory(jsonData)
             charts.build_weather_chart(forecastchart_container, checkerHistory)
@@ -65,7 +65,7 @@ function main() {
 
     // Events
     location_download_button.click(refresh_location_list_log)
-    get_weather_form.submit(function (event) {
+    get_weather_form.submit(function(event) {
         event.preventDefault();
         get_weather();
     });

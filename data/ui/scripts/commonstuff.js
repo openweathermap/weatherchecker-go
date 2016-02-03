@@ -99,7 +99,7 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
     var dataObject = {};
     var locationCollection = []
 
-    helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function (data) {
+    helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function(data) {
         dataObject = $.parseJSON(data);
 
         locationCollection = getlocations(dataObject);

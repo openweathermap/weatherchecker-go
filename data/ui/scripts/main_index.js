@@ -11,7 +11,7 @@ function main() {
 
     var datepickers = $('.daterange');
 
-    var landing_container = $('#landing')
+    var landing_container = $('#landing');
 
     var loading_shim_container = $('#loading_shim');
 
@@ -38,7 +38,6 @@ function main() {
 
     var admin_buttons = [refresh_button, upsert_location_button];
 
-
     function refresh_location_list_log() {
         commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger);
     }
@@ -62,7 +61,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function (data) {
+            success: function(data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -74,7 +73,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function(jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -167,7 +166,7 @@ function main() {
         };
     };
 
-    weather_request_form.submit(function (event) {
+    weather_request_form.submit(function(event) {
         event.preventDefault();
         download_weather_data();
     });
@@ -179,7 +178,7 @@ function main() {
     };
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function (event) {
+        formObject.on("change", function(event) {
             weather_request_form.submit();
         });
     };
