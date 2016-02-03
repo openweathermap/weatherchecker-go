@@ -141,6 +141,34 @@ function parseOWMhistory(OWMHistoryObject) {
     return checkerHistory
 }
 
+function extractForecast(forecastArray, length) {
+    var newForecasts = [];
+
+    for (var forecastEntry of forecastArray) {
+        var newEntry = {};
+
+        var startDate = forecastEntry['request_dt'];
+
+        newEntry['source'] = forecastEntry['source'];
+        newEntry['request_dt'] = startDate;
+        newEntry['measurements'] = [];
+
+        var closestDate = helpers.find_closest(startDate + length, make_timestamplist(forecastEntry)).Closest;
+
+        var matchedForecast = forecastEntry['measurements'].find(function(e, i, a) {
+            if (e['timestamp'] == closestDate) {
+                return true;
+            };
+        });
+
+        newEntry['measurements'].push(matchedForecast);
+
+        newForecasts.push(newEntry)
+    };
+
+    return newForecasts
+};
+
 function make_timestamplist(historyObject) {
     var timestamplist = []
 
