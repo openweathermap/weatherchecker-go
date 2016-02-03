@@ -25,9 +25,13 @@ function find_closest(x, range) {
         if (Math.abs(value - x) < Math.abs(closest - x)) {
             closest = value
         };
-
     };
-    return closest;
+    var closestIndex = range.indexOf(closest);
+    var closestInfo = {
+        Closest: closest,
+        Index: closestIndex
+    };
+    return closestInfo;
 };
 
 function collectionToMap(objectCollection, keyName) {
