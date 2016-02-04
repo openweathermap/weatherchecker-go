@@ -36,28 +36,42 @@ function make_history_table_data(historyObject, history_entrypoint) {
 
     var columns = [{
         data: "source",
-        title: "Provider"
+        title: "Provider",
+        orderable: true
     }, {
         data: "dt",
-        title: "Measurement date"
+        title: "Measurement date",
+        orderable: true
     }, {
         data: "temp",
-        title: "Temperature, C"
+        title: "Temperature, C",
+        orderable: false
     }, {
         data: "pressure",
-        title: "Pressure, mbar"
+        title: "Pressure, mbar",
+        orderable: false
     }, {
         data: "humidity",
-        title: "Humidity, percent"
+        title: "Humidity, percent",
+        orderable: false
     }, {
         data: "wind_speed",
-        title: "Wind speed, m/s"
+        title: "Wind speed, m/s",
+        orderable: false
     }, {
         data: "precipitation",
-        title: "Precipitation, mm"
+        title: "Precipitation, mm",
+        orderable: false
     }]
 
-    return [values, columns]
+    var tableOpts = {
+        order: [
+            [1, "desc"],
+            [0, "asc"]
+        ]
+    }
+
+    return [values, columns, tableOpts]
 }
 
 function getlocations(dataObject) {

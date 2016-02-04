@@ -144,16 +144,20 @@ function main() {
             var history_table_data = commonstuff.make_history_table_data(content['history'], entrypoints['history']);
             var history_table_values = history_table_data[0];
             var history_table_columns = history_table_data[1];
+            var history_table_opts = history_table_data[2];
             var table = $("<table>", {
                 class: "table table-striped"
             });
             weathertable_container.append(table);
-            table.DataTable({
+            var tableInitOpts = {
                 data: history_table_values,
                 columns: history_table_columns,
                 paging: true,
                 pagingType: "full_numbers"
-            });
+            };
+            Object.assign(tableInitOpts, history_table_opts);
+
+            table.DataTable(tableInitOpts);
             charts.build_weather_chart(weatherchart_container, content['history']['data']);
         };
     };
