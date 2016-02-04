@@ -4,12 +4,19 @@ var commonstuff = require("./commonstuff.js");
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
+function makeLanding() {
+    var landingBody = '<div class="jumbotron"><h1>Weather info at your hand</h1><p>OWM Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
+
+    return $(landingBody)
+}
+
 function main() {
     var entrypoints = settings.entrypoints;
 
     var adminKey = "";
 
     var datepickers = $('.daterange');
+    var activeZone = $('.activezone');
 
     var landing_container = $('#landing');
 
@@ -103,10 +110,13 @@ function main() {
 
     /* Events */
     function empty_body() {
-        landing_container.empty();
-        loading_shim_container.empty();
-        weatherchart_container.empty();
-        weathertable_container.empty();
+        activeZone.empty();
+    };
+
+    function show_landing() {
+        empty_body();
+        var landingBody = makeLanding();
+        landing_container.append(landingBody);
     };
 
     function show_shim() {
@@ -118,7 +128,7 @@ function main() {
         shim_spinner.append("Loading...");
 
         loading_shim_container.append(shim_spinner);
-    }
+    };
 
     function show_data(data) {
         var jsonData = $.parseJSON(data);
@@ -210,6 +220,8 @@ function main() {
     selectCityEntry.append("(select your city)");
 
     location_list_model.prepend(selectCityEntry);
+
+    show_landing();
 };
 
 $(document).ready(main);
