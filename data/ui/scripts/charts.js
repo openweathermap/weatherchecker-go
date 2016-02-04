@@ -59,7 +59,7 @@ function build_weather_chart(containerObject, historyDataObject) {
             type: 'spline'
         },
         title: {
-            text: 'Weather chart'
+            text: ''
         },
         xAxis: {
             type: 'datetime',
