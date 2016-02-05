@@ -113,7 +113,7 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
     var dataObject = {};
     var locationCollection = []
 
-    helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function(data) {
+    helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function (data) {
         dataObject = $.parseJSON(data);
 
         locationCollection = getlocations(dataObject);
@@ -123,7 +123,9 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
             location_list_model.append(option);
         };
         var locationMap = helpers.collectionToMap(locationCollection, 'id');
-        callback(locationMap);
+        if (callback != undefined) {
+            callback(locationMap);
+        };
     })
 };
 
@@ -169,7 +171,7 @@ function extractForecast(forecastArray, length) {
 
         var closestDate = helpers.find_closest(startDate + length, make_timestamplist(forecastEntry)).Closest;
 
-        var matchedForecast = forecastEntry['measurements'].find(function(e, i, a) {
+        var matchedForecast = forecastEntry['measurements'].find(function (e, i, a) {
             if (e['timestamp'] == closestDate) {
                 return true;
             };

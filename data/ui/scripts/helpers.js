@@ -71,20 +71,20 @@ function set_spinner_status(spinnerContainer, status) {
     spinnerContainer.empty();
     var iconClass = "";
     switch (status) {
-        case STATUS.OK: // OK
-            iconClass = "glyphicon glyphicon-ok";
-            break;
-        case STATUS.LOADING: // Loading
-            iconClass = "glyphicon glyphicon-refresh";
-            break;
-        case STATUS.ERROR: // Error
-            iconClass = "glyphicon glyphicon-remove";
-            break;
-        case STATUS.HAND_LEFT: // Select
-            iconClass = "glyphicon glyphicon-hand-left";
-            break;
-        default:
-            return;
+    case STATUS.OK: // OK
+        iconClass = "fa fa-check";
+        break;
+    case STATUS.LOADING: // Loading
+        iconClass = "fa fa-refresh fa-spin";
+        break;
+    case STATUS.ERROR: // Error
+        iconClass = "fa fa-times";
+        break;
+    case STATUS.HAND_LEFT: // Select
+        iconClass = "fa fa-hand-o-left";
+        break;
+    default:
+        return;
     };
     spinnerContainer.append($('<span>', {
         class: iconClass
@@ -96,7 +96,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
     $.ajax({
         url: requestUrl,
         dataType: "text",
-        success: function(data) {
+        success: function (data) {
             var jsonData = $.parseJSON(data);
             var status = jsonData.status;
 
@@ -112,7 +112,7 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
 
             logger(data);
         },
-        error: function(data) {
+        error: function (data) {
             set_spinner_status(spinnerContainer, STATUS.ERROR);
         }
     });

@@ -49,7 +49,9 @@ function main() {
         commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger);
     }
 
-
+    function refresh_location_list_nolog() {
+        commonstuff.refresh_location_list(location_list_model, entrypoints, null);
+    }
 
     function disable_admin_buttons() {
         for (var button of admin_buttons) {
@@ -68,7 +70,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function(data) {
+            success: function (data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -80,7 +82,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -122,12 +124,24 @@ function main() {
     function show_shim() {
         empty_body();
 
-        var shim_spinner = $('<div>', {
-            class: "loading_shim_spinner"
-        });
-        shim_spinner.append("Loading...");
+        var shim_spinner = $('<span>', {
+            class: "fa fa-refresh fa-spin shim-spinner"
+        })
 
-        loading_shim_container.append(shim_spinner);
+        var shim_spinner_p = $('<p>')
+        shim_spinner_p.append(shim_spinner)
+
+        var shim_spinner_row = $('<div>', {
+            class: "col-lg-offset-5"
+        })
+        shim_spinner_row.append(shim_spinner_p)
+
+        var shim_spinner_container = $('<div>', {
+            class: "container"
+        })
+        shim_spinner_container.append(shim_spinner_row)
+
+        loading_shim_container.append(shim_spinner_container);
     };
 
     function show_data(data) {
@@ -180,7 +194,7 @@ function main() {
         };
     };
 
-    weather_request_form.submit(function(event) {
+    weather_request_form.submit(function (event) {
         event.preventDefault();
         download_weather_data();
     });
@@ -192,13 +206,13 @@ function main() {
     };
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function(event) {
+        formObject.on("change", function (event) {
             weather_request_form.submit();
         });
     };
 
 
-    request_range_picker.on("apply.daterangepicker", function(event) {
+    request_range_picker.on("apply.daterangepicker", function (event) {
         make_request_range_picker_span();
 
         weather_request_form.submit();
@@ -213,7 +227,7 @@ function main() {
     request_range_picker.data('daterangepicker').setEndDate(end_time);
     make_request_range_picker_span();
 
-    refresh_location_list_log();
+    refresh_location_list_nolog();
     helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT)
 
     var selectCityEntry = $('<option>', {
