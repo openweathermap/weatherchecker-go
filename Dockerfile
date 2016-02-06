@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM scratch
 
 COPY ./bin/app_linux_amd64 /usr/bin/weatherchecker-go
 
