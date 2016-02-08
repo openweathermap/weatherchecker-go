@@ -37,6 +37,7 @@ var sources = structs.CreateSources()
 
 var mongoDsn string
 var refreshInterval int
+var maxDepth int
 
 var db_instance = db.Db()
 var locations = structs.NewLocationTable(db_instance)
@@ -223,8 +224,22 @@ func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request, sanitize bool)
 	wtype := query_holder.Get("wtype")
 	country := query_holder.Get("country")
 	locationid := query_holder.Get("locationid")
-	requeststart := query_holder.Get("requeststart")
 	requestend := query_holder.Get("requestend")
+
+	var requeststart string
+	requeststartRaw := query_holder.Get("requeststart")
+	if sanitize && maxDepth > 0 {
+		requeststartRawInt, _ := strconv.ParseInt(requeststartRaw, 10, 64)
+
+		currentTime := time.Now().Unix()
+
+		a := requeststartRawInt
+		b := currentTime - int64(3600*maxDepth)
+		requestStartInt := map[bool]int64{true: a, false: b}[a > b]
+		requeststart = strconv.FormatInt(requestStartInt, 10)
+	} else {
+		requeststart = requeststartRaw
+	}
 
 	history_data := history.ReadHistory(entryid, status, source, wtype, country, locationid, requeststart, requestend)
 	history_filters := map[string]string{"entryid": entryid, "status": strconv.FormatInt(status, 10), "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
@@ -331,6 +346,7 @@ func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
 func init() {
 	flag.StringVar(&mongoDsn, "mongo", "mongodb://127.0.0.1:27017/weatherchecker", "MongoDB DSN")
 	flag.IntVar(&refreshInterval, "refresh-interval", 0, "Refresh interval")
+	flag.IntVar(&maxDepth, "max-depth", 0, "Maximum depth (h) for unpriveleged requests")
 }
 
 func main() {
