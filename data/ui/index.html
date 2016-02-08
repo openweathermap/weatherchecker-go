@@ -27,14 +27,14 @@
     <div class="container">
         <header>
             <nav class="navbar navbar-default">
-                <a class="navbar-brand">OWM Weather Checker</a>
+                <a class="navbar-brand">Weather Checker</a>
                 <div class="collapse navbar-collapse">
                     <form class="navbar-form navbar-right" id="weather_request">
                         <div class="col-lg-12">
                             <div id="request_range_picker" class="daterange btn btn-default dropdown-toggle">
                                 <i class="glyphicon glyphicon-calendar"></i>&nbsp;<span id="request_range_span"></span>
                             </div>
-                            <select id="location_list" name="locationid" class="btn btn-default"></select>
+                            <select id="location_list" name="locationid" class="form-control"></select>
                             <span class="spinner" id="get_weatherdata_spinner"></span>
                         </div>
                     </form>
@@ -55,8 +55,7 @@
         <div id="weathertable" class="activezone table table-striped"></div>
         <footer>
             <div class="well well-sm">
-                <p>Copyleft 2015 - 2016, <a href="http://owm.io">OpenWeatherMap, Inc.</a></p>
-                <p>Weather Checker is available under the terms of <a href="https://gnu.org/licenses/agpl.html">GNU Affero General Public License v3</a></p>
+                <p>Weather Checker is available under the terms of <a href="https://gnu.org/licenses/agpl.html">GNU Affero General Public License v3</a>. <a href="https://github.com/owm-inc/weatherchecker-go">Source code at GitHub</a></p>
             </div>
         </footer>
     </div>
