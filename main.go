@@ -343,6 +343,20 @@ func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetSettings() map[string]interface{} {
+	settingsMap := map[string]interface{}{}
+
+	settingsMap["mongo"] = mongoDsn
+	settingsMap["refresh-interval"] = refreshInterval
+	settingsMap["max-depth"] = maxDepth
+
+	return settingsMap
+}
+
+func ReadSettings(c web.C, w http.ResponseWriter, r *http.Request) {
+	MarshalPrintResponse(200, "OK", map[string]interface{}{"settings": GetSettings()}, w)
+}
+
 func init() {
 	flag.StringVar(&mongoDsn, "mongo", "mongodb://127.0.0.1:27017/weatherchecker", "MongoDB DSN")
 	flag.IntVar(&refreshInterval, "refresh-interval", 0, "Refresh interval")
@@ -375,6 +389,7 @@ func main() {
 
 	const ApiEntrypoint = "/api" + "/" + ApiVer
 
+	const SettingsEntrypoints = ApiEntrypoint + "/settings"
 	const SourcesEntrypoint = ApiEntrypoint + "/sources"
 	const LocationEntrypoint = ApiEntrypoint + "/locations"
 	const HistoryEntrypoint = ApiEntrypoint + "/history"
@@ -384,6 +399,7 @@ func main() {
 	goji.Use(Api)
 	goji.Get(UIEntrypoint+"/*", GetPath)
 
+	goji.Get(SettingsEntrypoints, ReadSettings)
 	goji.Get(LocationEntrypoint, ReadLocations)
 	if !closedForPublic {
 		goji.Get(HistoryEntrypoint, ReadFullHistory)
