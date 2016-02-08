@@ -7,6 +7,7 @@ var serverEP = serveraddr + "/" + APIEP + "/" + APIVER;
 
 exports.entrypoints = {
     appid_check: serverEP + "/" + "check_appid",
+    settingsData: serverEP + "/" + "settings",
     locations: serverEP + "/" + "locations",
     history: serverEP + "/" + "history"
 };

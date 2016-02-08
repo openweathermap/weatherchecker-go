@@ -70,7 +70,7 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function (data) {
+            success: function(data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
@@ -82,7 +82,7 @@ function main() {
                     disable_admin_buttons();
                 }
             },
-            error: function (jqXHR, textStatus, errorThrown) {
+            error: function(jqXHR, textStatus, errorThrown) {
                 helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
                 helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
                 disable_admin_buttons();
@@ -194,7 +194,7 @@ function main() {
         };
     };
 
-    weather_request_form.submit(function (event) {
+    weather_request_form.submit(function(event) {
         event.preventDefault();
         download_weather_data();
     });
@@ -206,13 +206,13 @@ function main() {
     };
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function (event) {
+        formObject.on("change", function(event) {
             weather_request_form.submit();
         });
     };
 
 
-    request_range_picker.on("apply.daterangepicker", function (event) {
+    request_range_picker.on("apply.daterangepicker", function(event) {
         make_request_range_picker_span();
 
         weather_request_form.submit();
@@ -220,8 +220,16 @@ function main() {
 
 
     /* Actions on page load */
-    var start_time = moment().subtract(3, 'days');
+    var start_time = moment().subtract(3, 'days')
     var end_time = moment();
+    $.ajax({
+        url: entrypoints.settingsData,
+        contentType: "text/plain",
+        success: function(settingsData) {
+            var minstart = moment().subtract(settingsData["content"]["settings"]["max-depth"], 'hours');
+            request_range_picker.data('daterangepicker').minDate = minstart;
+        }
+    });
 
     request_range_picker.data('daterangepicker').setStartDate(start_time);
     request_range_picker.data('daterangepicker').setEndDate(end_time);
