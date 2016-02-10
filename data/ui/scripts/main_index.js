@@ -5,10 +5,18 @@ var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
 function makeLanding() {
-    var landingBody = '<div class="jumbotron"><h1>Weather info at your hand</h1><p>OWM Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
+    var landingBody =
+        '<div class="jumbotron"><h1>Weather info at your hand</h1><p>OWM Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
 
-    return $(landingBody)
-}
+    return $(landingBody);
+};
+
+function makeNoData() {
+    var noDataBody =
+        `<div class="jumbotron"><h1>No data available</h1><p>Try expanding the time interval or choose another location.</p></div>`
+
+    return $(noDataBody);
+};
 
 function main() {
     var entrypoints = settings.entrypoints;
@@ -19,6 +27,8 @@ function main() {
     var activeZone = $('.activezone');
 
     var landing_container = $('#landing');
+
+    var nodata_container = $('#nodata');
 
     var loading_shim_container = $('#loading_shim');
 
@@ -46,11 +56,13 @@ function main() {
     var admin_buttons = [refresh_button, upsert_location_button];
 
     function refresh_location_list_log() {
-        commonstuff.refresh_location_list(location_list_model, entrypoints, null, helpers.logger);
+        commonstuff.refresh_location_list(location_list_model, entrypoints,
+            null, helpers.logger);
     }
 
     function refresh_location_list_nolog() {
-        commonstuff.refresh_location_list(location_list_model, entrypoints, null);
+        commonstuff.refresh_location_list(location_list_model, entrypoints,
+            null);
     }
 
     function disable_admin_buttons() {
@@ -70,28 +82,36 @@ function main() {
         var url = entrypoints.appid_check;
         $.ajax({
             url: url + "?appid=" + appid,
-            success: function(data) {
+            success: function (data) {
                 helpers.logger(data)
                 var content = $.parseJSON(data)
                 if (content.status == 200) {
-                    adminKey = appid_check_form.serializeArray()[0].value;
-                    helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.OK);
+                    adminKey = appid_check_form.serializeArray()[0]
+                        .value;
+                    helpers.set_spinner_status(appid_check_spinner,
+                        helpers.STATUS.OK);
                     enable_admin_buttons();
                 } else {
-                    helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
+                    helpers.set_spinner_status(appid_check_spinner,
+                        helpers.STATUS.ERROR);
                     disable_admin_buttons();
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
-                helpers.set_spinner_status(appid_check_spinner, helpers.STATUS.ERROR);
-                helpers.logger("Ошибка запроса к " + url + ":   " + textStatus);
+            error: function (jqXHR, textStatus, errorThrown) {
+                helpers.set_spinner_status(appid_check_spinner,
+                    helpers.STATUS.ERROR);
+                helpers.logger("Ошибка запроса к " + url + ":   " +
+                    textStatus);
                 disable_admin_buttons();
             }
         });
     };
 
-    function weather_refresh_url(entrypoints, status, locationid, wtype, request_start, request_end, adminKey) {
-        var url = entrypoints.history + "?" + "status=" + status + "&" + "locationid=" + locationid + "&" + "wtype=" + wtype + "&" + "appid=" + adminKey
+    function weather_refresh_url(entrypoints, status, locationid, wtype,
+        request_start, request_end, adminKey) {
+        var url = entrypoints.history + "?" + "status=" + status + "&" +
+            "locationid=" + locationid + "&" + "wtype=" + wtype + "&" +
+            "appid=" + adminKey
         if (request_start != null) {
             url = url + '&requeststart=' + String(request_start)
         }
@@ -119,6 +139,12 @@ function main() {
         empty_body();
         var landingBody = makeLanding();
         landing_container.append(landingBody);
+    };
+
+    function show_nodata() {
+        empty_body();
+        var noDataBody = makeNoData();
+        nodata_container.append(noDataBody);
     };
 
     function show_shim() {
@@ -152,27 +178,34 @@ function main() {
         empty_body();
         if (status != 200) {
             helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.ERROR);
-            helpers.logger("Request failed with status " + String(status) + " and message: " + message);
+            helpers.logger("Request failed with status " + String(status) +
+                " and message: " + message);
         } else {
             helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.OK);
-            var history_table_data = commonstuff.make_history_table_data(content['history'], entrypoints['history']);
-            var history_table_values = history_table_data[0];
-            var history_table_columns = history_table_data[1];
-            var history_table_opts = history_table_data[2];
-            var table = $("<table>", {
-                class: "table table-striped"
-            });
-            weathertable_container.append(table);
-            var tableInitOpts = {
-                data: history_table_values,
-                columns: history_table_columns,
-                paging: true,
-                pagingType: "full_numbers"
-            };
-            Object.assign(tableInitOpts, history_table_opts);
+            if (content['history']['data'].length > 0) {
+                var history_table_data = commonstuff.make_history_table_data(
+                    content['history'], entrypoints['history']);
+                var history_table_values = history_table_data[0];
+                var history_table_columns = history_table_data[1];
+                var history_table_opts = history_table_data[2];
+                var table = $("<table>", {
+                    class: "table table-striped"
+                });
+                weathertable_container.append(table);
+                var tableInitOpts = {
+                    data: history_table_values,
+                    columns: history_table_columns,
+                    paging: true,
+                    pagingType: "full_numbers"
+                };
+                Object.assign(tableInitOpts, history_table_opts);
 
-            table.DataTable(tableInitOpts);
-            charts.build_weather_chart(weatherchart_container, content['history']['data']);
+                table.DataTable(tableInitOpts);
+                charts.build_weather_chart(weatherchart_container, content[
+                    'history']['data']);
+            } else {
+                show_nodata();
+            }
         };
     };
 
@@ -180,39 +213,49 @@ function main() {
         var locationid = $(location_list_model_id + " option:selected").val();
         var wtype = "current";
 
-        var request_start_momentObject = request_range_picker.data("daterangepicker").startDate;
-        var request_end_momentObject = request_range_picker.data("daterangepicker").endDate;
-        request_range_span.html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+        var request_start_momentObject = request_range_picker.data(
+            "daterangepicker").startDate;
+        var request_end_momentObject = request_range_picker.data(
+            "daterangepicker").endDate;
+        request_range_span.html(request_start_momentObject.format(
+            'D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format(
+            'D MMMM YYYY HH:mm'));
 
         var request_start = request_start_momentObject.unix();
         var request_end = request_end_momentObject.unix();
 
         if (locationid != "") {
-            var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
+            var download_url = weather_refresh_url(entrypoints, "200",
+                locationid, wtype, request_start, request_end, adminKey);
             show_shim();
-            helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
+            helpers.get_with_spinner_and_callback(download_url,
+                get_weatherdata_spinner, show_data);
         };
     };
 
-    weather_request_form.submit(function(event) {
+    weather_request_form.submit(function (event) {
         event.preventDefault();
         download_weather_data();
     });
 
     function make_request_range_picker_span() {
-        var request_start_momentObject = request_range_picker.data("daterangepicker").startDate;
-        var request_end_momentObject = request_range_picker.data("daterangepicker").endDate;
-        request_range_span.html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+        var request_start_momentObject = request_range_picker.data(
+            "daterangepicker").startDate;
+        var request_end_momentObject = request_range_picker.data(
+            "daterangepicker").endDate;
+        request_range_span.html(request_start_momentObject.format(
+            'D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format(
+            'D MMMM YYYY HH:mm'));
     };
 
     for (var formObject of[request_location_select]) {
-        formObject.on("change", function(event) {
+        formObject.on("change", function (event) {
             weather_request_form.submit();
         });
     };
 
 
-    request_range_picker.on("apply.daterangepicker", function(event) {
+    request_range_picker.on("apply.daterangepicker", function (event) {
         make_request_range_picker_span();
 
         weather_request_form.submit();
@@ -225,9 +268,11 @@ function main() {
     $.ajax({
         url: entrypoints.settingsData,
         contentType: "text/plain",
-        success: function(settingsData) {
-            var minstart = moment().subtract(settingsData["content"]["settings"]["max-depth"], 'hours');
-            request_range_picker.data('daterangepicker').minDate = minstart;
+        success: function (settingsData) {
+            var minstart = moment().subtract(settingsData["content"]
+                ["settings"]["max-depth"], 'hours');
+            request_range_picker.data('daterangepicker').minDate =
+                minstart;
         }
     });
 
