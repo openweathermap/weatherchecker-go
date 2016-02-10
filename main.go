@@ -148,12 +148,7 @@ func CreateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 			query_holder.Get("iso_country"),
 			query_holder.Get("country_name"),
 			query_holder.Get("latitude"),
-			query_holder.Get("longitude"),
-			query_holder.Get("accuweather_id"),
-			query_holder.Get("accuweather_city_name"),
-			query_holder.Get("gismeteo_id"),
-			query_holder.Get("gismeteo_city_name"),
-			query_holder.Get("yandex_id"))
+			query_holder.Get("longitude"))
 		PrintLocationEntry(locationEntry, w)
 	}
 }
@@ -175,12 +170,7 @@ func UpdateLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 			query_holder.Get("iso_country"),
 			query_holder.Get("country_name"),
 			query_holder.Get("latitude"),
-			query_holder.Get("longitude"),
-			query_holder.Get("accuweather_id"),
-			query_holder.Get("accuweather_city_name"),
-			query_holder.Get("gismeteo_id"),
-			query_holder.Get("gismeteo_city_name"),
-			query_holder.Get("yandex_id"))
+			query_holder.Get("longitude"))
 		PrintLocationEntry(locationEntry, w)
 	}
 }

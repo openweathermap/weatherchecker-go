@@ -26,13 +26,5 @@ func CreateSources() (sources []SourceEntry) {
 	sources = append(sources, SourceEntry{Name: "worldweatheronline", Urls: map[string]string{"current": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&fx=no&date_format=unix`,
 		"forecast": `http://api.worldweatheronline.com/free/v2/weather.ashx?key={{.Source.Keys.Key}}&q={{.Location.Latitude}},{{.Location.Longitude}}&format=json&cc=no&fx=yes&num_of_days=5&tp=1&extra=utcDateTime`}, Keys: Keyring{Key: os.Getenv("WORLDWEATHERONLINE_KEY")}})
 
-	sources = append(sources, SourceEntry{Name: "yandex", Urls: map[string]string{"current": `https://export.yandex.ru/weather-ng/forecasts/{{.Location.Yandex_id}}.xml`, "forecast": `https://export.yandex.ru/weather-ng/forecasts/{{.Location.Yandex_id}}.xml`}})
-
-	sources = append(sources, SourceEntry{Name: "accuweather", Urls: map[string]string{"current": `http://www.accuweather.com/ru/{{.Location.Iso_country}}/{{.Location.Accuweather_city_name}}/{{.Location.Accuweather_id}}/hourly-weather-forecast/{{.Location.Accuweather_id}}`,
-		"forecast": `http://www.accuweather.com/ru/{{.Location.Iso_country}}/{{.Location.Accuweather_city_name}}/{{.Location.Accuweather_id}}/hourly-weather-forecast/{{.Location.Accuweather_id}}`}, Keys: Keyring{}})
-
-	sources = append(sources, SourceEntry{Name: "gismeteo", Urls: map[string]string{"current": `https://www.gismeteo.ru/api/informer/data.js/{{.Source.Keys.Key}}/180x150-1/ru/?city={{.Location.Gismeteo_id}}`,
-		"forecast": `https://www.gismeteo.ru/api/informer/data.js/{{.Source.Keys.Key}}/180x150-1/ru/?city={{.Location.Gismeteo_id}}`}, Keys: Keyring{Key: os.Getenv("GISMETEO_KEY")}})
-
 	return sources
 }

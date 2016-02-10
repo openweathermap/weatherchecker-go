@@ -26,7 +26,7 @@ func AdaptWeather(sourceName string, wtypeName string, data string) (measurement
 	var adaptFunc func(string) (MeasurementArray, error)
 	var fnTable = make(map[string](map[string]func(string) (MeasurementArray, error)))
 
-	for _, provider := range []string{"owm", "wunderground", "myweather2", "forecast.io", "worldweatheronline", "yandex", "accuweather", "gismeteo"} {
+	for _, provider := range []string{"owm", "wunderground", "myweather2", "forecast.io", "worldweatheronline"} {
 		fnTable[provider] = make(map[string]func(string) (MeasurementArray, error))
 	}
 
@@ -38,9 +38,6 @@ func AdaptWeather(sourceName string, wtypeName string, data string) (measurement
 	fnTable["forecast.io"]["forecast"] = ForecastioAdaptForecast
 	fnTable["worldweatheronline"]["current"] = WorldweatheronlineAdaptCurrentWeather
 	fnTable["worldweatheronline"]["forecast"] = WorldweatheronlineAdaptForecast
-	fnTable["yandex"]["current"] = YandexAdaptCurrentWeather
-	fnTable["accuweather"]["current"] = AccuweatherAdaptCurrentWeather
-	fnTable["gismeteo"]["current"] = GismeteoAdaptCurrentWeather
 
 	adaptFunc = AdaptNull
 

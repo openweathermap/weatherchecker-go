@@ -28,26 +28,6 @@ function main() {
         Name: "longitude",
         Default: "",
         Placeholder: "Долгота"
-    }, {
-        Name: "accuweather_id",
-        Default: "",
-        Placeholder: "ID AccuWeather"
-    }, {
-        Name: "accuweather_city_name",
-        Default: "",
-        Placeholder: "Название города AccuWeather"
-    }, {
-        Name: "gismeteo_id",
-        Default: "",
-        Placeholder: "ID Gismeteo"
-    }, {
-        Name: "gismeteo_city_name",
-        Default: "",
-        Placeholder: "Название города Gismeteo"
-    }, {
-        Name: "yandex_id",
-        Default: "",
-        Placeholder: "ID Яндекс"
     }];
 
     var location_update_inputfields = [{
