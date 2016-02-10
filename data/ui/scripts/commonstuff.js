@@ -12,12 +12,12 @@ function make_history_table_data(historyObject, history_entrypoint) {
     var values = [];
 
     for (var history_entry of content) {
-
         var history_entry_flat = {
             "json_link": "<a href='" + history_entrypoint + "?" + $.param({
                 entryid: history_entry.objectid
             }) + "'>Open</a>",
-            "source": history_entry.source,
+            "source_id": history_entry.source.name,
+            "source_name": history_entry.source.prettyname,
             "raw_link": "N/A",
             "dt": moment.unix(history_entry.measurements[0].timestamp).format('YYYY-MM-DD HH:mm ZZ'),
             "request_dt": moment.unix(history_entry.request_time).format('YYYY-MM-DD HH:mm ZZ'),
@@ -35,7 +35,7 @@ function make_history_table_data(historyObject, history_entrypoint) {
     };
 
     var columns = [{
-        data: "source",
+        data: "source_name",
         title: "Provider",
         orderable: true
     }, {

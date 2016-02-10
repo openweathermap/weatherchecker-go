@@ -6,7 +6,7 @@ function makeProviderObject(content, key) {
     var providerObject = {}
 
     for (var entry of content) {
-        var provider = entry['source']
+        var provider = entry['source']['prettyname']
 
         var measurement = entry['measurements'][0]
         if (measurement == undefined) {

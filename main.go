@@ -112,6 +112,7 @@ func ValidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
 func SanitizeSource(source structs.SourceEntry) map[string]interface{} {
 	entry := make(map[string]interface{})
 	entry["name"] = source.Name
+	entry["prettyname"] = source.PrettyName
 	entry["urls"] = source.Urls
 
 	return entry
@@ -240,7 +241,7 @@ func ReadHistory(c web.C, w http.ResponseWriter, r *http.Request, sanitize bool)
 		entry["objectid"] = history_entry.Id
 		entry["status"] = history_entry.Status
 		entry["location"] = history_entry.Location
-		entry["source"] = history_entry.Source.Name
+		entry["source"] = SanitizeSource(history_entry.Source)
 		entry["measurements"] = history_entry.Measurements
 		entry["request_time"] = history_entry.RequestTime
 		entry["wtype"] = history_entry.WType
