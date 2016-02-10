@@ -55,9 +55,9 @@ type WundergroundCurrentObservationStruct struct {
 	WindDir               string                     `json:"wind_dir"`
 	WindDegrees           int                        `json:"wind_degrees"`
 	WindMph               float64                    `json:"wind_mph"`
-	WindGustMph           float64                    `json:"wind_gust_mph"`
+	WindGustMph           string                     `json:"wind_gust_mph"`
 	WindKph               float64                    `json:"wind_kph"`
-	WindGustKph           float64                    `json:"wind_gust_kph"`
+	WindGustKph           string                     `json:"wind_gust_kph"`
 	PressureMb            string                     `json:"pressure_mb"`
 	PressureIn            string                     `json:"pressure_in"`
 	PressureTrend         string                     `json:"pressure_trend"`
