@@ -38,6 +38,7 @@ var sources = structs.CreateSources()
 var mongoDsn string
 var refreshInterval int
 var maxDepth int
+var email string
 
 var db_instance = db.Db()
 var locations = structs.NewLocationTable(db_instance)
@@ -340,6 +341,7 @@ func GetSettings() map[string]interface{} {
 	settingsMap["mongo"] = mongoDsn
 	settingsMap["refresh-interval"] = refreshInterval
 	settingsMap["max-depth"] = maxDepth
+	settingsMap["email"] = email
 
 	return settingsMap
 }
@@ -360,6 +362,8 @@ func main() {
 	if os.Getenv("MONGO") != "" {
 		mongoDsn = os.Getenv("MONGO")
 	}
+
+	email = os.Getenv("WC_EMAIL")
 
 	var adminKey = os.Getenv("ADMIN_PASS")
 

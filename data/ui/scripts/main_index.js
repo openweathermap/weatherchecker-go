@@ -18,6 +18,13 @@ function makeNoData() {
     return $(noDataBody);
 };
 
+function makeContactLink(emailaddr) {
+    var contactLink = $('<a>', {href: "mailto:" + emailaddr})
+    contactLink.append('Contact us.')
+
+    return $(contactLink);
+}
+
 function main() {
     var entrypoints = settings.entrypoints;
 
@@ -52,6 +59,8 @@ function main() {
     var request_range_span = $('#request_range_span')
     var request_location_select = location_list_model;
     var upsert_location_button = $('#upsert_location');
+
+    var contactInfoContainer = $('#contact-info')
 
     var admin_buttons = [refresh_button, upsert_location_button];
 
@@ -268,11 +277,12 @@ function main() {
     $.ajax({
         url: entrypoints.settingsData,
         contentType: "text/plain",
-        success: function (settingsData) {
-            var minstart = moment().subtract(settingsData["content"]
-                ["settings"]["max-depth"], 'hours');
-            request_range_picker.data('daterangepicker').minDate =
-                minstart;
+        success: function (settingsObject) {
+            var settingsMap = settingsObject["content"]["settings"]
+
+            var minstart = moment().subtract(settingsMap["max-depth"], 'hours');
+            request_range_picker.data('daterangepicker').minDate = minstart;
+            contactInfoContainer.append(makeContactLink(settingsMap["email"]))
         }
     });
 
