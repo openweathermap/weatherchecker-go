@@ -52,21 +52,30 @@ func MakeDataEntry(location LocationEntry, source SourceEntry, wtype string) (en
 	var err error
 	var url string
 	var raw string
-	var measurements adapters.MeasurementArray
+	measurements := make(adapters.MeasurementArray, 0)
 
-	url = makeUrl(source.Urls[wtype], UrlData{Source: source, Location: location})
+	adaptFunc, adaptFuncLookupErr := adapters.GetAdaptFunc(source.Name, wtype)
 
-	var downloadErr error
-	raw, downloadErr = download(url)
+	if adaptFuncLookupErr == nil {
+		url = makeUrl(source.Urls[wtype], UrlData{Source: source, Location: location})
 
-	if downloadErr != nil {
-		measurements = adapters.AdaptStub(raw)
-		err = downloadErr
+		var downloadErr error
+		raw, downloadErr = download(url)
+
+		if downloadErr != nil {
+			measurements = adapters.AdaptStub(raw)
+			err = downloadErr
+		} else {
+			var adaptErr error
+			measurements, adaptErr = adaptFunc(raw)
+
+			err = adaptErr
+		}
+
 	} else {
-		var adaptErr error
-		measurements, adaptErr = adapters.AdaptWeather(source.Name, wtype, raw)
-		err = adaptErr
+		err = adaptFuncLookupErr
 	}
+
 	entry = NewHistoryDataEntry(location, source, measurements, wtype, url, err)
 
 	return entry
@@ -77,27 +86,37 @@ type WeatherHistory struct {
 	Collection string
 }
 
-func (this *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
+func (h *WeatherHistory) CreateHistoryEntry(locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
 	dt := time.Now().Unix()
+
+	dataChan := make(chan HistoryDataEntry, 9999)
+	doneChan := make(chan struct{})
+
+	go func() {
+		for entry := range dataChan {
+			h.Database.Insert(h.Collection, entry)
+			dataset = append(dataset, entry)
+		}
+		doneChan <- struct{}{}
+	}()
+
 	for _, location := range locations {
 		for _, source := range sources {
 			for _, wtype := range wtypes {
 				data := MakeDataEntry(location, source, wtype)
 				data.RequestTime = dt
 
-				dataset = append(dataset, data)
+				dataChan <- data
 			}
 		}
 	}
-
-	for _, entry := range dataset {
-		this.Database.Insert(this.Collection, entry)
-	}
+	close(dataChan)
+	<-doneChan
 
 	return dataset
 }
 
-func (this *WeatherHistory) ReadHistory(entryid string, status int64, source string, wtype string, country string, locationid string, requeststart string, requestend string) (result []HistoryDataEntry) {
+func (h *WeatherHistory) ReadHistory(entryid string, status int64, source string, wtype string, country string, locationid string, requeststart string, requestend string) (result []HistoryDataEntry) {
 	result = []HistoryDataEntry{}
 	query := make(map[string]interface{})
 	if entryid != "" {
@@ -130,7 +149,7 @@ func (this *WeatherHistory) ReadHistory(entryid string, status int64, source str
 		}
 	}
 
-	this.Database.Find(this.Collection, query, &result)
+	h.Database.Find(h.Collection, query, &result)
 	return result
 }
 

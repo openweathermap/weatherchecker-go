@@ -2,6 +2,7 @@ package adapters
 
 import "github.com/owm-inc/weatherchecker-go/common"
 
+// Measurement represents the data extracted from provider data.
 type Measurement struct {
 	Humidity      float64 `json:"humidity"`
 	Pressure      float64 `json:"pressure"`
@@ -10,46 +11,79 @@ type Measurement struct {
 	Wind          float64 `json:"wind"`
 }
 
+// MeasurementSchema is the holding structure for provider response.
 type MeasurementSchema struct {
 	Data      Measurement `json:"data"`
 	Timestamp int64       `json:"timestamp"`
 }
 
+// MeasurementArray is a collection of provider responses
 type MeasurementArray []MeasurementSchema
 
-func AdaptStub(s string) MeasurementArray { return make(MeasurementArray, 0) }
-func AdaptNull(s string) (measurements MeasurementArray, err error) {
-	return AdaptStub(s), common.NoAdaptFunc
+func NewMeasurementArray() MeasurementArray {
+	return make(MeasurementArray, 0)
 }
 
-func AdaptWeather(sourceName string, wtypeName string, data string) (measurements MeasurementArray, err error) {
-	var adaptFunc func(string) (MeasurementArray, error)
-	var fnTable = make(map[string](map[string]func(string) (MeasurementArray, error)))
+// AdaptStub is an adapter for MeasurementArray constructor
+func AdaptStub(s string) MeasurementArray { return NewMeasurementArray() }
 
-	for _, provider := range []string{"owm", "wunderground", "myweather2", "forecast.io", "worldweatheronline"} {
-		fnTable[provider] = make(map[string]func(string) (MeasurementArray, error))
+type AdapterCollection struct {
+	data    map[string](map[string]func(string) (MeasurementArray, error))
+	dataSem chan struct{}
+}
+
+func (c *AdapterCollection) Add(source string, wt string, fn func(string) (MeasurementArray, error)) {
+	<-c.dataSem
+
+	if _, ok := c.data[source]; ok == false {
+		c.data[source] = make(map[string]func(string) (MeasurementArray, error))
 	}
+	c.data[source][wt] = fn
 
-	fnTable["owm"]["current"] = OwmAdaptCurrentWeather
-	fnTable["owm"]["forecast"] = OwmAdaptForecast
-	fnTable["wunderground"]["current"] = WundergroundAdaptCurrentWeather
-	fnTable["myweather2"]["current"] = Myweather2AdaptCurrentWeather
-	fnTable["forecast.io"]["current"] = ForecastioAdaptCurrentWeather
-	fnTable["forecast.io"]["forecast"] = ForecastioAdaptForecast
-	fnTable["worldweatheronline"]["current"] = WorldweatheronlineAdaptCurrentWeather
-	fnTable["worldweatheronline"]["forecast"] = WorldweatheronlineAdaptForecast
+	c.dataSem <- struct{}{}
+}
 
-	adaptFunc = AdaptNull
+func (c *AdapterCollection) Retrieve(source, wt string) (adaptFunc func(string) (MeasurementArray, error)) {
+	<-c.dataSem
 
-	_, p_ok := fnTable[sourceName]
-	if p_ok == true {
-		storedFunc, f_ok := fnTable[sourceName][wtypeName]
-		if f_ok == true {
+	sourceFuncs, aExists := c.data[source]
+	if aExists == true {
+		storedFunc, bExists := sourceFuncs[wt]
+		if bExists == true {
 			adaptFunc = storedFunc
 		}
 	}
 
-	measurements, err = adaptFunc(data)
+	c.dataSem <- struct{}{}
 
-	return measurements, err
+	return adaptFunc
+}
+
+func MakeAdapterCollection() AdapterCollection {
+	c := AdapterCollection{}
+	c.data = make(map[string](map[string]func(string) (MeasurementArray, error)))
+	c.dataSem = make(chan struct{}, 1)
+	c.dataSem <- struct{}{}
+
+	return c
+}
+
+func GetAdaptFunc(sourceName string, wtypeName string) (adaptFunc func(string) (MeasurementArray, error), err error) {
+	fnColl := MakeAdapterCollection()
+	fnColl.Add("owm", "current", OwmAdaptCurrentWeather)
+	fnColl.Add("owm", "forecast", OwmAdaptForecast)
+	fnColl.Add("wunderground", "current", WundergroundAdaptCurrentWeather)
+	fnColl.Add("myweather2", "current", Myweather2AdaptCurrentWeather)
+	fnColl.Add("forecast.io", "current", ForecastioAdaptCurrentWeather)
+	fnColl.Add("forecast.io", "forecast", ForecastioAdaptForecast)
+	fnColl.Add("worldweatheronline", "current", WorldweatheronlineAdaptCurrentWeather)
+	fnColl.Add("worldweatheronline", "forecast", WorldweatheronlineAdaptForecast)
+
+	adaptFunc = fnColl.Retrieve(sourceName, wtypeName)
+
+	if adaptFunc == nil {
+		err = common.NoAdaptFunc
+	}
+
+	return adaptFunc, err
 }
