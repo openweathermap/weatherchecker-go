@@ -1,8 +1,18 @@
-package structs
+package models
 
 import (
 	"os"
 )
+
+type UrlData struct {
+	Source   SourceEntry
+	Location LocationEntry
+}
+
+type Keyring struct {
+	Key  string `json:"key"`
+	Uref string `json:"uref"`
+}
 
 type SourceEntry struct {
 	Name       string            `json:"name"`

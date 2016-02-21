@@ -23,8 +23,9 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/owm-inc/weatherchecker-go/bindata"
+	"github.com/owm-inc/weatherchecker-go/core"
 	"github.com/owm-inc/weatherchecker-go/db"
-	"github.com/owm-inc/weatherchecker-go/structs"
+	"github.com/owm-inc/weatherchecker-go/models"
 )
 
 type JsonResponse struct {
@@ -33,7 +34,7 @@ type JsonResponse struct {
 	Content interface{} `json:"content"`
 }
 
-var sources = structs.CreateSources()
+var sources = models.CreateSources()
 
 var mongoDsn string
 var refreshInterval int
@@ -41,8 +42,8 @@ var maxDepth int
 var email string
 
 var db_instance = db.Db()
-var locations = structs.NewLocationTable(db_instance)
-var history = structs.NewWeatherHistory(db_instance)
+var locations = models.NewLocationTable(db_instance)
+var history = models.NewWeatherHistory(db_instance)
 
 func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	data, _ := json.Marshal(stuff)
@@ -58,20 +59,20 @@ func MarshalPrintResponse(status int, message string, content interface{}, w htt
 	MarshalPrintStuff(JsonResponse{Status: status, Message: message, Content: content}, w)
 }
 
-func PrintLocationEntry(locationEntry structs.LocationEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"location_entry": []structs.LocationEntry{locationEntry}}, w)
+func PrintLocationEntry(locationEntry models.LocationEntry, w http.ResponseWriter) {
+	MarshalPrintResponse(200, "OK", map[string][]models.LocationEntry{"location_entry": []models.LocationEntry{locationEntry}}, w)
 }
 
-func PrintHistoryEntry(historyEntry []structs.HistoryDataEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]structs.HistoryDataEntry{"history_entry": historyEntry}, w)
+func PrintHistoryEntry(historyEntry []models.HistoryDataEntry, w http.ResponseWriter) {
+	MarshalPrintResponse(200, "OK", map[string][]models.HistoryDataEntry{"history_entry": historyEntry}, w)
 }
 
 func PrintLocations(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]structs.LocationEntry{"locations": locations.ReadLocations()}, w)
+	MarshalPrintResponse(200, "OK", map[string][]models.LocationEntry{"locations": locations.ReadLocations()}, w)
 }
 
 func PrintSources(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]structs.SourceEntry{"sources": sources}, w)
+	MarshalPrintResponse(200, "OK", map[string][]models.SourceEntry{"sources": sources}, w)
 }
 
 func PrintSanitizedSources(w http.ResponseWriter) {
@@ -110,7 +111,7 @@ func ValidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintStatus(nil, "API key valid.", w)
 }
 
-func SanitizeSource(source structs.SourceEntry) map[string]interface{} {
+func SanitizeSource(source models.SourceEntry) map[string]interface{} {
 	entry := make(map[string]interface{})
 	entry["name"] = source.Name
 	entry["prettyname"] = source.PrettyName
@@ -188,7 +189,7 @@ func UpsertLocation(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteLocation(c web.C, w http.ResponseWriter, r *http.Request) {
-	missing := make([]string, 0)
+	missing := []string{}
 
 	query_holder := r.URL.Query()
 
@@ -283,9 +284,9 @@ func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintHistoryEntry(historyEntry, w)
 }
 
-func RefreshHistoryCore(sources []structs.SourceEntry, wtypes []string) []structs.HistoryDataEntry {
+func RefreshHistoryCore(sources []models.SourceEntry, wtypes []string) []models.HistoryDataEntry {
 	locations_query := locations.ReadLocations()
-	historyEntry := history.CreateHistoryEntry(locations_query, sources, wtypes)
+	historyEntry := core.PollAll(&history, locations_query, sources, wtypes)
 
 	return historyEntry
 }
@@ -303,13 +304,13 @@ func Api(c *web.C, h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey string, cb_success, cb_fail func(web.C, http.ResponseWriter, *http.Request)) {
+func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey string, cbSuccess, cbFail func(web.C, http.ResponseWriter, *http.Request)) {
 	key := r.URL.Query().Get("appid")
 
 	if key == adminKey {
-		cb_success(c, w, r)
+		cbSuccess(c, w, r)
 	} else {
-		cb_fail(c, w, r)
+		cbFail(c, w, r)
 	}
 }
 
@@ -380,26 +381,27 @@ func main() {
 	}
 	defer db_instance.Disconnect()
 
-	const ApiVer = "0.1"
+	const APIVer = "0.1"
 
-	const ApiEntrypoint = "/api" + "/" + ApiVer
+	const APIEntrypoint = "/api" + "/" + APIVer
 
-	const SettingsEntrypoints = ApiEntrypoint + "/settings"
-	const SourcesEntrypoint = ApiEntrypoint + "/sources"
-	const LocationEntrypoint = ApiEntrypoint + "/locations"
-	const HistoryEntrypoint = ApiEntrypoint + "/history"
+	const KeyCheckEntrypoint = APIEntrypoint + "/check_appid"
+	const SettingsEntrypoint = APIEntrypoint + "/settings"
+	const SourcesEntrypoint = APIEntrypoint + "/sources"
+	const LocationEntrypoint = APIEntrypoint + "/locations"
+	const HistoryEntrypoint = APIEntrypoint + "/history"
 
 	const UIEntrypoint = "/ui"
 
 	goji.Use(Api)
 	goji.Get(UIEntrypoint+"/*", GetPath)
 
-	goji.Get(SettingsEntrypoints, ReadSettings)
+	goji.Get(SettingsEntrypoint, ReadSettings)
 	goji.Get(LocationEntrypoint, ReadLocations)
 	if !closedForPublic {
 		goji.Get(HistoryEntrypoint, ReadFullHistory)
 		goji.Get(SourcesEntrypoint, ReadSources)
-		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		goji.Get(KeyCheckEntrypoint, func(c web.C, w http.ResponseWriter, r *http.Request) {
 			CheckApiKey(c, w, r, r.URL.Query().Get("appid"), ValidApiKey, InvalidApiKey)
 		})
 		goji.Get(HistoryEntrypoint+"/refresh", RefreshHistory)
@@ -416,7 +418,7 @@ func main() {
 		goji.Get(SourcesEntrypoint, func(c web.C, w http.ResponseWriter, r *http.Request) {
 			CheckApiKey(c, w, r, adminKey, ReadSources, ReadSanitizedSources)
 		})
-		goji.Get(ApiEntrypoint+"/check_appid", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		goji.Get(KeyCheckEntrypoint, func(c web.C, w http.ResponseWriter, r *http.Request) {
 			CheckApiKey(c, w, r, adminKey, ValidApiKey, InvalidApiKey)
 		})
 		goji.Get(HistoryEntrypoint+"/refresh", func(c web.C, w http.ResponseWriter, r *http.Request) {
