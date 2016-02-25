@@ -14,6 +14,7 @@ exports.create_input_fields = create_input_fields;
 exports.set_spinner_status = set_spinner_status;
 exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
 exports.logger = logger;
+exports.valueInSelect = valueInSelect;
 
 function logger(data) {
     console.log(data);
@@ -109,11 +110,23 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
             if (callbackFunc != undefined) {
                 callbackFunc(data);
             }
-
-            logger(data);
         },
         error: function (data) {
             set_spinner_status(spinnerContainer, STATUS.ERROR);
         }
     });
+};
+
+function valueInSelect(selectModel, value) {
+    var exists = false;
+    console.log("Searching for " + value + " in the model")
+    selectModel.contents().each(function () {
+        if (this.value == value) {
+            exists = true;
+            console.log("Found!")
+            return false;
+        };
+    });
+
+    return exists;
 };

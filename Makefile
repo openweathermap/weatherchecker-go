@@ -1,8 +1,9 @@
 clean:
-	rm -rf ./bin ./bindata
-	rm -rf ./data/ui/bundle/*
+	rm -rf ./bin
+	rm -rf ./ui/bundle/* ./.docker/nginx/fs/etc/nginx/html
 generate: clean
 	go generate
+	cp -r ./ui ./.docker/nginx/fs/etc/nginx/html
 compile: generate
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./bin/app_linux_amd64
 

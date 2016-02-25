@@ -1,20 +1,17 @@
 package main
 
-//go:generate browserify ./data/ui/scripts/main_index.js -o ./data/ui/bundle/index.js
-//go:generate browserify ./data/ui/scripts/main_admin.js -o ./data/ui/bundle/admin.js
-//go:generate browserify ./data/ui/scripts/main_analytics.js -o ./data/ui/bundle/analytics.js
-//go:generate browserify ./data/ui/scripts/ga.js -o ./data/ui/bundle/ga.js
-//go:generate go-bindata -o "bindata/bindata.go" -pkg "bindata" "data/..."
+//go:generate browserify ./ui/scripts/main_index.js -o ./ui/bundle/index.js
+//go:generate browserify ./ui/scripts/main_admin.js -o ./ui/bundle/admin.js
+//go:generate browserify ./ui/scripts/main_analytics.js -o ./ui/bundle/analytics.js
+//go:generate browserify ./ui/scripts/ga.js -o ./ui/bundle/ga.js
 import (
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"mime"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +19,6 @@ import (
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
 
-	"github.com/owm-inc/weatherchecker-go/bindata"
 	"github.com/owm-inc/weatherchecker-go/core"
 	"github.com/owm-inc/weatherchecker-go/db"
 	"github.com/owm-inc/weatherchecker-go/models"
@@ -314,28 +310,6 @@ func CheckApiKey(c web.C, w http.ResponseWriter, r *http.Request, adminKey strin
 	}
 }
 
-func GetPath(c web.C, w http.ResponseWriter, r *http.Request) {
-	var assetPath string
-
-	switch r.URL.Path {
-	case "/ui/":
-		assetPath = "data/ui/index.html"
-	case "/ui/admin/":
-		assetPath = "data/ui/admin.html"
-	default:
-		assetPath = "data" + r.URL.Path
-	}
-
-	asset, err := bindata.Asset(assetPath)
-	if err == nil {
-		contentType := mime.TypeByExtension(filepath.Ext(assetPath))
-		w.Header().Set("Content-Type", contentType)
-		fmt.Fprintf(w, string(asset))
-	} else {
-		fmt.Fprintf(w, err.Error()+"\n")
-	}
-}
-
 func GetSettings() map[string]interface{} {
 	settingsMap := map[string]interface{}{}
 
@@ -383,7 +357,7 @@ func main() {
 
 	const APIVer = "0.1"
 
-	const APIEntrypoint = "/api" + "/" + APIVer
+	const APIEntrypoint = "/" + APIVer
 
 	const KeyCheckEntrypoint = APIEntrypoint + "/check_appid"
 	const SettingsEntrypoint = APIEntrypoint + "/settings"
@@ -391,10 +365,7 @@ func main() {
 	const LocationEntrypoint = APIEntrypoint + "/locations"
 	const HistoryEntrypoint = APIEntrypoint + "/history"
 
-	const UIEntrypoint = "/ui"
-
 	goji.Use(Api)
-	goji.Get(UIEntrypoint+"/*", GetPath)
 
 	goji.Get(SettingsEntrypoint, ReadSettings)
 	goji.Get(LocationEntrypoint, ReadLocations)
@@ -443,8 +414,6 @@ func main() {
 			CheckApiKey(c, w, r, adminKey, ClearHistory, InvalidApiKey)
 		})
 	}
-
-	goji.Get("/", http.RedirectHandler(UIEntrypoint+"/", 301))
 
 	if refreshInterval > 0 {
 		go func() {

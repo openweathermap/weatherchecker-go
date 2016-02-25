@@ -1,3 +1,3 @@
 bin
-bindata
-data/ui/bundle/*
+ui/bundle/*
+.docker/nginx/fs/etc/nginx/html

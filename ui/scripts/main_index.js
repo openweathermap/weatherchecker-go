@@ -5,24 +5,28 @@ var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
 function makeLanding() {
-    var landingBody =
-        '<div class="jumbotron"><h1>Weather info at your hand</h1><p>Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
+    var landingBody = '<div class="jumbotron"><h1>Weather info at your hand</h1><p>Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
 
     return $(landingBody);
 };
 
 function makeNoData() {
-    var noDataBody =
-        `<div class="jumbotron"><h1>No data available</h1><p>Try expanding the time interval or choose another location.</p></div>`
+    var noDataBody = `<div class="jumbotron"><h1>No data available</h1><p>Try expanding the time interval or choose another location.</p></div>`
 
     return $(noDataBody);
 };
 
 function makeContactLink(emailaddr) {
-    var contactLink = $('<a>', {href: "mailto:" + emailaddr})
+    var contactLink = $('<a>', {
+        href: "mailto:" + emailaddr
+    })
     contactLink.append('Contact us.')
 
     return $(contactLink);
+}
+
+function makeLocationUrl(locationid) {
+    return "/location" + "/" + locationid
 }
 
 function main() {
@@ -64,14 +68,14 @@ function main() {
 
     var admin_buttons = [refresh_button, upsert_location_button];
 
-    function refresh_location_list_log() {
+    function refresh_location_list_log(cb) {
         commonstuff.refresh_location_list(location_list_model, entrypoints,
             null, helpers.logger);
     }
 
-    function refresh_location_list_nolog() {
+    function refresh_location_list_nolog(cb) {
         commonstuff.refresh_location_list(location_list_model, entrypoints,
-            null);
+            null, cb);
     }
 
     function disable_admin_buttons() {
@@ -219,13 +223,19 @@ function main() {
     };
 
     function download_weather_data() {
-        var locationid = $(location_list_model_id + " option:selected").val();
+        var locoption = $(location_list_model_id + " option:selected");
+        var locationid = locoption.val();
+        var locationName = locoption.contents()[0].data;
         var wtype = "current";
 
         var request_start_momentObject = request_range_picker.data(
             "daterangepicker").startDate;
         var request_end_momentObject = request_range_picker.data(
             "daterangepicker").endDate;
+
+        history.replaceState({}, "", makeLocationUrl(locationid))
+        document.title = "Weather in " + locationName
+
         request_range_span.html(request_start_momentObject.format(
             'D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format(
             'D MMMM YYYY HH:mm'));
@@ -279,7 +289,6 @@ function main() {
         contentType: "text/plain",
         success: function (settingsObject) {
             var settingsMap = settingsObject["content"]["settings"]
-
             var minstart = moment().subtract(settingsMap["max-depth"], 'hours');
             request_range_picker.data('daterangepicker').minDate = minstart;
             contactInfoContainer.append(makeContactLink(settingsMap["email"]))
@@ -290,7 +299,6 @@ function main() {
     request_range_picker.data('daterangepicker').setEndDate(end_time);
     make_request_range_picker_span();
 
-    refresh_location_list_nolog();
     helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT)
 
     var selectCityEntry = $('<option>', {
@@ -300,9 +308,20 @@ function main() {
     });
     selectCityEntry.append("(select your city)");
 
-    location_list_model.prepend(selectCityEntry);
 
     show_landing();
+
+    var pathName = window.location.pathname;
+
+    var preselectedLocId = pathName.replace("location", "").replace(/(\/+)/g, "")
+
+    refresh_location_list_nolog(function () {
+        location_list_model.prepend(selectCityEntry);
+        if (helpers.valueInSelect($(location_list_model_id), preselectedLocId)) {
+            $(location_list_model_id).val(preselectedLocId);
+            $(location_list_model_id).change();
+        };
+    });
 };
 
 $(document).ready(main);
