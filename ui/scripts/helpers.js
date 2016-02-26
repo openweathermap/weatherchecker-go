@@ -14,17 +14,24 @@ exports.create_input_fields = create_input_fields;
 exports.set_spinner_status = set_spinner_status;
 exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
 exports.logger = logger;
-exports.valueInSelect = valueInSelect;
+exports.fieldValueInSelect = fieldValueInSelect;
+exports.clearChildren = clearChildren;
 
 function logger(data) {
     console.log(data);
+};
+
+function clearChildren(node) {
+    for (var child of Array.from(node.children)) {
+        node.removeChild(child);
+    };
 };
 
 function find_closest(x, range) {
     var closest = range[0];
     for (var value of range) {
         if (Math.abs(value - x) < Math.abs(closest - x)) {
-            closest = value
+            closest = value;
         };
     };
     var closestIndex = range.indexOf(closest);
@@ -64,12 +71,7 @@ function create_input_fields(inputfields_desc) {
     return input_fields
 };
 
-function set_spinner_status(spinnerContainer, status) {
-    if (spinnerContainer == null) {
-        return;
-    };
-
-    spinnerContainer.empty();
+function makeSpinner(status) {
     var iconClass = "";
     switch (status) {
     case STATUS.OK: // OK
@@ -87,9 +89,20 @@ function set_spinner_status(spinnerContainer, status) {
     default:
         return;
     };
-    spinnerContainer.append($('<span>', {
-        class: iconClass
-    }));
+    var newSpinner = document.createElement('span');
+    newSpinner.setAttribute('class', iconClass);
+
+    return newSpinner;
+}
+
+function set_spinner_status(spinnerContainer, status) {
+    if (spinnerContainer == null) {
+        return;
+    };
+
+    clearChildren(spinnerContainer);
+
+    spinnerContainer.appendChild(makeSpinner(status));
 };
 
 function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFunc) {
@@ -117,16 +130,16 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
     });
 };
 
-function valueInSelect(selectModel, value) {
-    var exists = false;
-    console.log("Searching for " + value + " in the model")
-    selectModel.contents().each(function () {
-        if (this.value == value) {
-            exists = true;
-            console.log("Found!")
-            return false;
+function fieldValueInSelect(selectModel, field, value) {
+    var existIndex = -1;
+    var optionList = selectModel.childNodes
+    for (var optionIndex in optionList) {
+        var option = optionList[optionIndex]
+        if (option.getAttribute(field) == value) {
+            existIndex = optionIndex;
+            break;
         };
-    });
+    };
 
-    return exists;
+    return existIndex;
 };

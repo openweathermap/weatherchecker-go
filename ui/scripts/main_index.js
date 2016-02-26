@@ -4,29 +4,69 @@ var commonstuff = require("./commonstuff.js");
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
-function makeLanding() {
-    var landingBody = '<div class="jumbotron"><h1>Weather info at your hand</h1><p>Weather Checker lets you compare weather data from different providers.</p><p><a class="btn btn-primary btn-lg" role="button" disabled=true>Select the city in the box above to start</a></p></div>'
+function quickParseHTML(sourceText) {
+    return (new DOMParser()).parseFromString(sourceText, "text/html").firstChild;
+}
 
-    return $(landingBody);
+function makeLanding() {
+    return quickParseHTML(`
+    <div class="jumbotron">
+      <h1>Weather info at your hand</h1>
+      <p>Weather Checker lets you compare weather data from different providers.</p>
+      <p>
+        <a class="btn btn-primary btn-lg" role="button" disabled="true">Select the city in the box above to start</a>
+      </p>
+    </div>
+    `)
 };
 
 function makeNoData() {
-    var noDataBody = `<div class="jumbotron"><h1>No data available</h1><p>Try expanding the time interval or choose another location.</p></div>`
-
-    return $(noDataBody);
+    return quickParseHTML(`
+    <div class="jumbotron">
+      <h1>No data available</h1>
+      <p>Try expanding the time interval or choose another location.</p>
+    </div>
+    `)
 };
 
-function makeContactLink(emailaddr) {
-    var contactLink = $('<a>', {
-        href: "mailto:" + emailaddr
-    })
-    contactLink.append('Contact us.')
+function makeShim() {
+    var shim_spinner = document.createElement('span');
+    shim_spinner.setAttribute('class', "fa fa-refresh fa-spin shim-spinner");
 
-    return $(contactLink);
+    var shim_spinner_p = document.createElement('p');
+    shim_spinner_p.appendChild(shim_spinner);
+
+    var shim_spinner_row = document.createElement('div');
+    shim_spinner_row.setAttribute('class', "col-lg-offset-5");
+    shim_spinner_row.appendChild(shim_spinner_p);
+
+    var shim_spinner_container = document.createElement('div');
+    shim_spinner_container.setAttribute('class', "container");
+    shim_spinner_container.appendChild(shim_spinner_row);
+
+    return shim_spinner_container;
+}
+
+function makeContactLink(emailaddr) {
+    var contactLink = document.createElement('a')
+    contactLink.setAttribute('href', "mailto:" + emailaddr)
+    contactLink.innerText = 'Contact us.'
+
+    return contactLink;
 }
 
 function makeLocationUrl(locationid) {
     return "/location" + "/" + locationid
+}
+
+function makeLocationSelectEntry() {
+    var entry = document.createElement('option');
+    entry.setAttribute('disabled', true);
+    entry.setAttribute('objectid', "");
+    entry.setAttribute('slug', "");
+    entry.innerText = "(select your city)";
+
+    return entry
 }
 
 function main() {
@@ -34,90 +74,31 @@ function main() {
 
     var adminKey = "";
 
-    var datepickers = $('.daterange');
-    var activeZone = $('.activezone');
+    var datepickers = document.getElementsByClassName('daterange');
+    var activeZone = document.getElementsByClassName('activezone');
 
-    var landing_container = $('#landing');
+    var landing_container = document.getElementById('landing');
 
-    var nodata_container = $('#nodata');
+    var nodata_container = document.getElementById('nodata');
 
-    var loading_shim_container = $('#loading_shim');
+    var loading_shim_container = document.getElementById('loading_shim');
 
-    var appid_check_spinner = $('#appid_check_spinner');
-    var refresh_spinner = $('#refresh_spinner');
-    var upsert_location_spinner = $('#upsert_location_spinner');
-    var get_weatherdata_spinner = $('#get_weatherdata_spinner');
+    var get_weatherdata_spinner = document.getElementById('get_weatherdata_spinner');
 
-    var location_list_model_id = "select#location_list";
-    var location_list_model = $(location_list_model_id);
+    var location_list_model = document.getElementById('location_list');
 
-    var location_upsert_form = $("#location_upsert_form");
-    var weathertable_container = $("#weathertable");
-    var weatherchart_container = $("#weatherchart");
-    var weather_request_form = $("form#weather_request");
+    var weathertable_container = document.getElementById("weathertable");
+    var weatherchart_container = document.getElementById("weatherchart");
+    var weather_request_form = document.getElementById("weather_request_form");
 
-    var appid_check_form = $("#appid_check_form");
-
-    var refresh_button = $('#refresh_button');
-    var request_range_picker = $('#request_range_picker');
-    var request_range_span = $('#request_range_span')
+    var request_range_picker = document.getElementById('request_range_picker');
+    var request_range_span = document.getElementById('request_range_span');
     var request_location_select = location_list_model;
-    var upsert_location_button = $('#upsert_location');
 
-    var contactInfoContainer = $('#contact-info')
+    var contactInfoContainer = document.getElementById('contact-info');
 
-    var admin_buttons = [refresh_button, upsert_location_button];
-
-    function refresh_location_list_log(cb) {
-        commonstuff.refresh_location_list(location_list_model, entrypoints,
-            null, helpers.logger);
-    }
-
-    function refresh_location_list_nolog(cb) {
-        commonstuff.refresh_location_list(location_list_model, entrypoints,
-            null, cb);
-    }
-
-    function disable_admin_buttons() {
-        for (var button of admin_buttons) {
-            button.attr("disabled", true);
-        };
-    };
-
-    function enable_admin_buttons() {
-        for (var button of admin_buttons) {
-            button.attr("disabled", false);
-        };
-    };
-
-
-    function check_appid(appid) {
-        var url = entrypoints.appid_check;
-        $.ajax({
-            url: url + "?appid=" + appid,
-            success: function (data) {
-                helpers.logger(data)
-                var content = $.parseJSON(data)
-                if (content.status == 200) {
-                    adminKey = appid_check_form.serializeArray()[0]
-                        .value;
-                    helpers.set_spinner_status(appid_check_spinner,
-                        helpers.STATUS.OK);
-                    enable_admin_buttons();
-                } else {
-                    helpers.set_spinner_status(appid_check_spinner,
-                        helpers.STATUS.ERROR);
-                    disable_admin_buttons();
-                }
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                helpers.set_spinner_status(appid_check_spinner,
-                    helpers.STATUS.ERROR);
-                helpers.logger("Ошибка запроса к " + url + ":   " +
-                    textStatus);
-                disable_admin_buttons();
-            }
-        });
+    function refresh_location_list_simple(cb) {
+        commonstuff.refresh_location_list(location_list_model, entrypoints, null, cb);
     };
 
     function weather_refresh_url(entrypoints, status, locationid, wtype,
@@ -135,7 +116,7 @@ function main() {
     };
 
     /* Model init */
-    datepickers.daterangepicker({
+    $(datepickers).daterangepicker({
         timePicker: true,
         timePicker24Hour: true,
         locale: {
@@ -145,42 +126,27 @@ function main() {
 
     /* Events */
     function empty_body() {
-        activeZone.empty();
+        for (var node of Array.from(activeZone)) {
+            helpers.clearChildren(node);
+        };
     };
 
     function show_landing() {
         empty_body();
         var landingBody = makeLanding();
-        landing_container.append(landingBody);
+        landing_container.appendChild(landingBody);
     };
 
     function show_nodata() {
         empty_body();
         var noDataBody = makeNoData();
-        nodata_container.append(noDataBody);
+        nodata_container.appendChild(noDataBody);
     };
 
     function show_shim() {
         empty_body();
 
-        var shim_spinner = $('<span>', {
-            class: "fa fa-refresh fa-spin shim-spinner"
-        })
-
-        var shim_spinner_p = $('<p>')
-        shim_spinner_p.append(shim_spinner)
-
-        var shim_spinner_row = $('<div>', {
-            class: "col-lg-offset-5"
-        })
-        shim_spinner_row.append(shim_spinner_p)
-
-        var shim_spinner_container = $('<div>', {
-            class: "container"
-        })
-        shim_spinner_container.append(shim_spinner_row)
-
-        loading_shim_container.append(shim_spinner_container);
+        loading_shim_container.appendChild(makeShim());
     };
 
     function show_data(data) {
@@ -201,10 +167,11 @@ function main() {
                 var history_table_values = history_table_data[0];
                 var history_table_columns = history_table_data[1];
                 var history_table_opts = history_table_data[2];
-                var table = $("<table>", {
-                    class: "table table-striped"
-                });
-                weathertable_container.append(table);
+
+                var table = document.createElement("table");
+                table.setAttribute("class", "table table-striped");
+
+                weathertable_container.appendChild(table);
                 var tableInitOpts = {
                     data: history_table_values,
                     columns: history_table_columns,
@@ -213,9 +180,8 @@ function main() {
                 };
                 Object.assign(tableInitOpts, history_table_opts);
 
-                table.DataTable(tableInitOpts);
-                charts.build_weather_chart(weatherchart_container, content[
-                    'history']['data']);
+                $(table).DataTable(tableInitOpts);
+                charts.build_weather_chart($(weatherchart_container), content['history']['data']);
             } else {
                 show_nodata();
             }
@@ -223,105 +189,103 @@ function main() {
     };
 
     function download_weather_data() {
-        var locoption = $(location_list_model_id + " option:selected");
-        var locationid = locoption.val();
-        var locationName = locoption.contents()[0].data;
+        var locoption = location_list_model.options[location_list_model.selectedIndex];
+        var locationid = locoption.getAttribute("objectid");
+        var locationName = locoption.innerText;
         var wtype = "current";
 
-        var request_start_momentObject = request_range_picker.data(
-            "daterangepicker").startDate;
-        var request_end_momentObject = request_range_picker.data(
-            "daterangepicker").endDate;
+        var request_start_momentObject = $(request_range_picker).data("daterangepicker").startDate;
+        var request_end_momentObject = $(request_range_picker).data("daterangepicker").endDate;
 
         history.replaceState({}, "", makeLocationUrl(locationid))
         document.title = "Weather in " + locationName
 
-        request_range_span.html(request_start_momentObject.format(
-            'D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format(
-            'D MMMM YYYY HH:mm'));
+        $(request_range_span).html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
 
         var request_start = request_start_momentObject.unix();
         var request_end = request_end_momentObject.unix();
 
         if (locationid != "") {
-            var download_url = weather_refresh_url(entrypoints, "200",
-                locationid, wtype, request_start, request_end, adminKey);
+            var download_url = weather_refresh_url(entrypoints, "200", locationid, wtype, request_start, request_end, adminKey);
             show_shim();
-            helpers.get_with_spinner_and_callback(download_url,
-                get_weatherdata_spinner, show_data);
+            helpers.get_with_spinner_and_callback(download_url, get_weatherdata_spinner, show_data);
         };
     };
 
-    weather_request_form.submit(function (event) {
+    weather_request_form.onsubmit = function (event) {
         event.preventDefault();
         download_weather_data();
-    });
+    };
 
     function make_request_range_picker_span() {
-        var request_start_momentObject = request_range_picker.data(
-            "daterangepicker").startDate;
-        var request_end_momentObject = request_range_picker.data(
-            "daterangepicker").endDate;
-        request_range_span.html(request_start_momentObject.format(
-            'D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format(
-            'D MMMM YYYY HH:mm'));
+        var request_start_momentObject = $(request_range_picker).data("daterangepicker").startDate;
+        var request_end_momentObject = $(request_range_picker).data("daterangepicker").endDate;
+        $(request_range_span).html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
     };
 
-    for (var formObject of[request_location_select]) {
-        formObject.on("change", function (event) {
-            weather_request_form.submit();
-        });
+    request_location_select.onchange = function () {
+        $(weather_request_form).submit();
     };
 
-
-    request_range_picker.on("apply.daterangepicker", function (event) {
+    request_range_picker.on("apply.daterangepicker", function () {
         make_request_range_picker_span();
 
-        weather_request_form.submit();
+        $(weather_request_form).submit();
     });
 
 
     /* Actions on page load */
-    var start_time = moment().subtract(3, 'days')
+    var start_time = moment().subtract(3, 'days');
     var end_time = moment();
     $.ajax({
         url: entrypoints.settingsData,
         contentType: "text/plain",
         success: function (settingsObject) {
-            var settingsMap = settingsObject["content"]["settings"]
+            var settingsMap = settingsObject["content"]["settings"];
             var minstart = moment().subtract(settingsMap["max-depth"], 'hours');
-            request_range_picker.data('daterangepicker').minDate = minstart;
-            contactInfoContainer.append(makeContactLink(settingsMap["email"]))
+            $(request_range_picker).data('daterangepicker').minDate = minstart;
+            contactInfoContainer.appendChild(makeContactLink(settingsMap["email"]));
         }
     });
 
-    request_range_picker.data('daterangepicker').setStartDate(start_time);
-    request_range_picker.data('daterangepicker').setEndDate(end_time);
+    $(request_range_picker).data('daterangepicker').setStartDate(start_time);
+    $(request_range_picker).data('daterangepicker').setEndDate(end_time);
     make_request_range_picker_span();
 
-    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT)
-
-    var selectCityEntry = $('<option>', {
-        disabled: true,
-        selected: true,
-        value: ""
-    });
-    selectCityEntry.append("(select your city)");
-
+    helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT);
 
     show_landing();
 
     var pathName = window.location.pathname;
 
-    var preselectedLocId = pathName.replace("location", "").replace(/(\/+)/g, "")
+    var pathNameSplit = pathName.split('/').slice(1);
 
-    refresh_location_list_nolog(function () {
-        location_list_model.prepend(selectCityEntry);
-        if (helpers.valueInSelect($(location_list_model_id), preselectedLocId)) {
-            $(location_list_model_id).val(preselectedLocId);
-            $(location_list_model_id).change();
+    var prefix = pathNameSplit[0];
+    var value = pathNameSplit[1];
+
+    var refresh_cb_base = function () {
+        var selectCityEntry = makeLocationSelectEntry();
+        location_list_model.insertBefore(selectCityEntry, null);
+        location_list_model.selectedIndex = Array.from(location_list_model.childNodes).indexOf(selectCityEntry);
+    };
+
+    var refresh_cb = refresh_cb_base;
+
+    if (prefix == "location") {
+        var preselectedLocId = value;
+
+        refresh_cb = function () {
+            refresh_cb_base();
+            var foundIndex = helpers.fieldValueInSelect(location_list_model, "objectid", preselectedLocId);
+
+            if (foundIndex != -1) {
+                location_list_model.selectedIndex = foundIndex;
+                location_list_model.onchange();
+            };
         };
-    });
+    };
+
+    refresh_location_list_simple(refresh_cb);
 };
 
-$(document).ready(main);
+document.addEventListener('DOMContentLoaded', main);

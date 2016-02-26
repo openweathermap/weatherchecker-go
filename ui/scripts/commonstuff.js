@@ -3,7 +3,6 @@
 var helpers = require("./helpers.js");
 
 exports.make_history_table_data = make_history_table_data;
-exports.make_city_select_options = make_city_select_options;
 exports.refresh_location_list = refresh_location_list;
 exports.parseOWMhistory = parseOWMhistory;
 
@@ -82,6 +81,7 @@ function getlocations(dataObject) {
         for (var location_entry of location_list) {
             var entry = {};
             entry.id = location_entry['objectid'];
+            entry.slug = location_entry['slug'];
             entry.name = location_entry['city_name'];
             entry.latitude = location_entry['latitude'];
             entry.longitude = location_entry['longitude'];
@@ -92,23 +92,24 @@ function getlocations(dataObject) {
     return locations;
 };
 
-function make_city_select_options(locationCollection) {
+function makeCitySelectOptions(locationCollection) {
     var output = [];
 
     for (var entry of locationCollection) {
-        var newOption = $("<option>", {
-            value: entry.id,
-            lat: entry.latitude,
-            lon: entry.longitude
-        });
-        newOption.append(entry.name);
+        var newOption = document.createElement('option')
+        newOption.setAttribute('objectid', entry.id)
+        newOption.setAttribute('slug', entry.slug)
+        newOption.setAttribute('lat', entry.latitude)
+        newOption.setAttribute('lon', entry.longitude)
+
+        newOption.innerText = entry.name;
         output.push(newOption);
     };
     return output;
 };
 
 function refresh_location_list(location_list_model, entrypoints, spinnerContainer, callback) {
-    location_list_model.empty();
+    $(location_list_model).empty();
 
     var dataObject = {};
     var locationCollection = []
@@ -117,12 +118,13 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
         dataObject = $.parseJSON(data);
 
         locationCollection = getlocations(dataObject);
-        var options = make_city_select_options(locationCollection);
+        var options = makeCitySelectOptions(locationCollection);
 
         for (var option of options) {
-            location_list_model.append(option);
+            location_list_model.appendChild(option);
         };
         var locationMap = helpers.collectionToMap(locationCollection, 'id');
+
         if (callback != undefined) {
             callback(locationMap);
         };
