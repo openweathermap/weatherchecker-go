@@ -40,7 +40,7 @@ func StatSource(location models.LocationEntry, source models.SourceEntry, wtype 
 	adaptFunc, adaptFuncLookupErr := adapters.GetAdaptFunc(source.Name, wtype)
 
 	if adaptFuncLookupErr == nil {
-		url = util.MakeUrl(source.Urls[wtype], models.UrlData{Source: source, Location: location})
+		url = util.MakeURL(source.Urls[wtype], models.UrlData{Source: source, Location: location})
 
 		var downloadErr error
 		raw, downloadErr = util.Download(url)

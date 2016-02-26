@@ -4,91 +4,110 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/owm-inc/weatherchecker-go/db"
+	"github.com/owm-inc/weatherchecker-go/util"
 )
 
+// LocationEntryBase represents the key fields of LocationEntry.
 type LocationEntryBase struct {
-	City_name    string `json:"city_name"`
-	Iso_country  string `json:"iso_country"`
-	Country_name string `json:"country_name"`
-	Latitude     string `json:"latitude"`
-	Longitude    string `json:"longitude"`
+	CityName    string `bson:"city_name" json:"city_name"`
+	Slug        string `bson:"-" json:"slug"`
+	IsoCountry  string `bson:"iso_country" json:"iso_country"`
+	CountryName string `bson:"country_name" json:"country_name"`
+	Latitude    string `bson:"latitude" json:"latitude"`
+	Longitude   string `bson:"longitude" json:"longitude"`
 }
 
+// LocationEntry is the single location that will be queried for by Weather Checker.
 type LocationEntry struct {
 	DbEntryBase       `bson:",inline"`
 	LocationEntryBase `bson:",inline"`
 }
 
+// NewLocationEntry makes a new location entry based on specified parameters.
 func NewLocationEntry(
-	city_name,
-	iso_country,
-	country_name,
+	cityName,
+	isoCountry,
+	countryName,
 	latitude,
 	longitude string) LocationEntry {
-	model := LocationEntry{DbEntryBase{Id: bson.NewObjectId()}, LocationEntryBase{City_name: city_name, Iso_country: iso_country, Country_name: country_name, Latitude: latitude, Longitude: longitude}}
+	model := LocationEntry{DbEntryBase{Id: bson.NewObjectId()}, LocationEntryBase{CityName: cityName, IsoCountry: isoCountry, CountryName: countryName, Latitude: latitude, Longitude: longitude}}
 
 	return model
 }
 
+// LocationTable is a structure that acts as an interface between DB collection and Golang logic.
 type LocationTable struct {
 	Database   *db.MongoDb
 	Collection string
 }
 
-func (this *LocationTable) CreateLocation(
-	city_name,
-	iso_country,
-	country_name,
+// CreateLocation creates new location entry and inserts it into database.
+func (c *LocationTable) CreateLocation(
+	cityName,
+	isoCountry,
+	countryName,
 	latitude,
 	longitude string) (entry LocationEntry) {
-	entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude)
-	this.Database.Insert(this.Collection, entry)
+	entry = NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
+	c.Database.Insert(c.Collection, entry)
 
 	return entry
 }
 
-func (this *LocationTable) ReadLocations() (result []LocationEntry) {
-	this.Database.FindAll(this.Collection, &result)
-	return result
+// ReadLocations returns all location entries in the database.
+func (c *LocationTable) ReadLocations() []LocationEntry {
+	var result []LocationEntry
+	c.Database.FindAll(c.Collection, &result)
+
+	output := make([]LocationEntry, len(result))
+	for i, location := range result {
+		location.Slug = util.MakeSlug(location.CityName)
+		output[i] = location
+	}
+	return output
 }
 
-func (this *LocationTable) UpdateLocation(
-	location_id,
-	city_name,
-	iso_country,
-	country_name,
+// UpdateLocation modifies location entry based on input parameters.
+func (c *LocationTable) UpdateLocation(
+	locationID,
+	cityName,
+	isoCountry,
+	countryName,
 	latitude,
 	longitude string) (entry LocationEntry, err error) {
-	b, idParseErr := db.GetObjectIDFromString(location_id)
+	b, idParseErr := db.GetObjectIDFromString(locationID)
 
 	if idParseErr != nil {
 		err = idParseErr
 	} else {
-		entry = NewLocationEntry(city_name, iso_country, country_name, latitude, longitude)
+		entry = NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
 		entry.Id = b
-		err = this.Database.Update(this.Collection, b, entry)
+		err = c.Database.Update(c.Collection, b, entry)
 	}
 	return entry, err
 }
 
-func (this *LocationTable) DeleteLocation(location_id string) (err error) {
-	b, idParseErr := db.GetObjectIDFromString(location_id)
+// DeleteLocation removes location from the database.
+func (c *LocationTable) DeleteLocation(locationID string) (err error) {
+	b, idParseErr := db.GetObjectIDFromString(locationID)
 
 	if idParseErr != nil {
 		err = idParseErr
 	} else {
-		err = this.Database.Remove(this.Collection, b)
+		err = c.Database.Remove(c.Collection, b)
 	}
 
 	return err
 }
 
-func (this *LocationTable) Clear() error {
-	return this.Database.RemoveAll(this.Collection)
+// Clear removes all location entries from the database.
+func (c *LocationTable) Clear() error {
+	return c.Database.RemoveAll(c.Collection)
 }
 
-func NewLocationTable(db_instance *db.MongoDb) LocationTable {
-	var locations = LocationTable{Database: db_instance, Collection: "Locations"}
+// NewLocationTable creates a new instance of LocationTable.
+func NewLocationTable(dbInstance *db.MongoDb) LocationTable {
+	var locations = LocationTable{Database: dbInstance, Collection: "Locations"}
 
 	return locations
 }

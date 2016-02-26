@@ -191,14 +191,15 @@ function main() {
     function download_weather_data() {
         var locoption = location_list_model.options[location_list_model.selectedIndex];
         var locationid = locoption.getAttribute("objectid");
+        var locationslug = locoption.getAttribute("slug");
         var locationName = locoption.innerText;
         var wtype = "current";
 
         var request_start_momentObject = $(request_range_picker).data("daterangepicker").startDate;
         var request_end_momentObject = $(request_range_picker).data("daterangepicker").endDate;
 
-        history.replaceState({}, "", makeLocationUrl(locationid))
-        document.title = "Weather in " + locationName
+        history.replaceState({}, "", makeLocationUrl(locationslug));
+        document.title = "Weather in " + locationName;
 
         $(request_range_span).html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
 
@@ -227,7 +228,7 @@ function main() {
         $(weather_request_form).submit();
     };
 
-    request_range_picker.on("apply.daterangepicker", function () {
+    $(request_range_picker).on("apply.daterangepicker", function () {
         make_request_range_picker_span();
 
         $(weather_request_form).submit();
@@ -272,11 +273,11 @@ function main() {
     var refresh_cb = refresh_cb_base;
 
     if (prefix == "location") {
-        var preselectedLocId = value;
+        var preselectedSlug = value;
 
         refresh_cb = function () {
             refresh_cb_base();
-            var foundIndex = helpers.fieldValueInSelect(location_list_model, "objectid", preselectedLocId);
+            var foundIndex = helpers.fieldValueInSelect(location_list_model, "slug", preselectedSlug);
 
             if (foundIndex != -1) {
                 location_list_model.selectedIndex = foundIndex;
