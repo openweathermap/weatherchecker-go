@@ -29,6 +29,15 @@ function makeNoData() {
     `)
 };
 
+function makeNotFound() {
+    return quickParseHTML(`
+    <div class="jumbotron">
+      <h1>Location not found.</h1>
+      <p>The specified location does not exist.</p>
+    </div>
+    `)
+};
+
 function makeShim() {
     var shim_spinner = document.createElement('span');
     shim_spinner.setAttribute('class', "fa fa-refresh fa-spin shim-spinner");
@@ -141,6 +150,12 @@ function main() {
         empty_body();
         var noDataBody = makeNoData();
         nodata_container.appendChild(noDataBody);
+    };
+
+    function showNotFound() {
+        empty_body();
+        var notFoundBody = makeNotFound();
+        nodata_container.appendChild(notFoundBody);
     };
 
     function show_shim() {
@@ -282,6 +297,8 @@ function main() {
             if (foundIndex != -1) {
                 location_list_model.selectedIndex = foundIndex;
                 location_list_model.onchange();
+            } else {
+                showNotFound();
             };
         };
     };
