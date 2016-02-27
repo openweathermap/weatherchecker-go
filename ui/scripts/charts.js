@@ -54,7 +54,7 @@ function get_weatherchart_data(historyDataObject) {
 
 function build_weather_chart(containerObject, historyDataObject) {
     var chart_series = get_weatherchart_data(historyDataObject)
-    containerObject.highcharts({
+    jQuery(containerObject).highcharts({
         chart: {
             type: 'spline'
         },

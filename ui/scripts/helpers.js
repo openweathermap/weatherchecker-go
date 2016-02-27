@@ -16,10 +16,15 @@ exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
 exports.logger = logger;
 exports.fieldValueInSelect = fieldValueInSelect;
 exports.clearChildren = clearChildren;
+exports.quickParseHTML = quickParseHTML;
 
 function logger(data) {
     console.log(data);
 };
+
+function quickParseHTML(sourceText) {
+    return (new DOMParser()).parseFromString(sourceText, "text/html").firstChild;
+}
 
 function clearChildren(node) {
     for (var child of Array.from(node.children)) {
@@ -58,13 +63,13 @@ function collectionToMap(objectCollection, keyName) {
 function create_input_fields(inputfields_desc) {
     var input_fields = new Array;
     for (var inputfield of inputfields_desc) {
-        var entry = $('<input>', {
-            name: inputfield.Name,
-            type: "text",
-            class: inputfield.Name + " form-control",
-            value: inputfield.Default,
-            placeholder: inputfield.Placeholder
-        });
+        var entry = document.createElement('input')
+        entry.setAttribute("name", inputfield.Name)
+        entry.setAttribute("type", "text")
+        entry.setAttribute("class", inputfield.Name + " form-control")
+        entry.setAttribute("value", inputfield.Default)
+        entry.setAttribute("placeholder", inputfield.Placeholder)
+
         input_fields.push(entry);
     };
 
@@ -107,11 +112,11 @@ function set_spinner_status(spinnerContainer, status) {
 
 function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFunc) {
     set_spinner_status(spinnerContainer, STATUS.LOADING);
-    $.ajax({
+    jQuery.ajax({
         url: requestUrl,
         dataType: "text",
         success: function (data) {
-            var jsonData = $.parseJSON(data);
+            var jsonData = JSON.parse(data);
             var status = jsonData.status;
 
             if (status == 200) {
@@ -132,10 +137,11 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
 
 function fieldValueInSelect(selectModel, field, value) {
     var existIndex = -1;
-    var optionList = selectModel.childNodes
+    var optionList = Array.from(selectModel.childNodes);
     for (var optionIndex in optionList) {
-        var option = optionList[optionIndex]
-        if (option.getAttribute(field) == value) {
+        var option = optionList[optionIndex];
+        var optionValue = option.getAttribute(field);
+        if (optionValue == value) {
             existIndex = optionIndex;
             break;
         };

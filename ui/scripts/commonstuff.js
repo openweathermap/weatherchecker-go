@@ -12,9 +12,7 @@ function make_history_table_data(historyObject, history_entrypoint) {
 
     for (var history_entry of content) {
         var history_entry_flat = {
-            "json_link": "<a href='" + history_entrypoint + "?" + $.param({
-                entryid: history_entry.objectid
-            }) + "'>Open</a>",
+            "json_link": "<a href='" + history_entrypoint + "?" + "entryid=" + history_entry.objectid + "'>Open</a>",
             "source_id": history_entry.source.name,
             "source_name": history_entry.source.prettyname,
             "raw_link": "N/A",
@@ -109,13 +107,13 @@ function makeCitySelectOptions(locationCollection) {
 };
 
 function refresh_location_list(location_list_model, entrypoints, spinnerContainer, callback) {
-    $(location_list_model).empty();
+    helpers.clearChildren(location_list_model);
 
     var dataObject = {};
     var locationCollection = []
 
     helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function (data) {
-        dataObject = $.parseJSON(data);
+        dataObject = JSON.parse(data);
 
         locationCollection = getlocations(dataObject);
         var options = makeCitySelectOptions(locationCollection);

@@ -4,12 +4,8 @@ var commonstuff = require("./commonstuff.js");
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
-function quickParseHTML(sourceText) {
-    return (new DOMParser()).parseFromString(sourceText, "text/html").firstChild;
-}
-
 function makeLanding() {
-    return quickParseHTML(`
+    return helpers.quickParseHTML(`
     <div class="jumbotron">
       <h1>Weather info at your hand</h1>
       <p>Weather Checker lets you compare weather data from different providers.</p>
@@ -21,7 +17,7 @@ function makeLanding() {
 };
 
 function makeNoData() {
-    return quickParseHTML(`
+    return helpers.quickParseHTML(`
     <div class="jumbotron">
       <h1>No data available</h1>
       <p>Try expanding the time interval or choose another location.</p>
@@ -30,7 +26,7 @@ function makeNoData() {
 };
 
 function makeNotFound() {
-    return quickParseHTML(`
+    return helpers.quickParseHTML(`
     <div class="jumbotron">
       <h1>Location not found.</h1>
       <p>The specified location does not exist.</p>
@@ -125,7 +121,7 @@ function main() {
     };
 
     /* Model init */
-    $(datepickers).daterangepicker({
+    jQuery(datepickers).daterangepicker({
         timePicker: true,
         timePicker24Hour: true,
         locale: {
@@ -165,7 +161,7 @@ function main() {
     };
 
     function show_data(data) {
-        var jsonData = $.parseJSON(data);
+        var jsonData = JSON.parse(data);
         var status = jsonData.status;
         var message = jsonData.message;
         var content = jsonData['content'];
@@ -195,8 +191,8 @@ function main() {
                 };
                 Object.assign(tableInitOpts, history_table_opts);
 
-                $(table).DataTable(tableInitOpts);
-                charts.build_weather_chart($(weatherchart_container), content['history']['data']);
+                jQuery(table).DataTable(tableInitOpts);
+                charts.build_weather_chart(weatherchart_container, content['history']['data']);
             } else {
                 show_nodata();
             }
@@ -210,13 +206,13 @@ function main() {
         var locationName = locoption.innerText;
         var wtype = "current";
 
-        var request_start_momentObject = $(request_range_picker).data("daterangepicker").startDate;
-        var request_end_momentObject = $(request_range_picker).data("daterangepicker").endDate;
+        var request_start_momentObject = jQuery(request_range_picker).data("daterangepicker").startDate;
+        var request_end_momentObject = jQuery(request_range_picker).data("daterangepicker").endDate;
 
         history.replaceState({}, "", makeLocationUrl(locationslug));
         document.title = "Weather in " + locationName;
 
-        $(request_range_span).html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+        request_range_span.innerHTML = request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm');
 
         var request_start = request_start_momentObject.unix();
         var request_end = request_end_momentObject.unix();
@@ -228,51 +224,55 @@ function main() {
         };
     };
 
+    function weather_request_form_submit() {
+        download_weather_data();
+    }
+
     weather_request_form.onsubmit = function (event) {
         event.preventDefault();
-        download_weather_data();
+        weather_request_form_submit();
     };
 
     function make_request_range_picker_span() {
-        var request_start_momentObject = $(request_range_picker).data("daterangepicker").startDate;
-        var request_end_momentObject = $(request_range_picker).data("daterangepicker").endDate;
-        $(request_range_span).html(request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm'));
+        var request_start_momentObject = jQuery(request_range_picker).data("daterangepicker").startDate;
+        var request_end_momentObject = jQuery(request_range_picker).data("daterangepicker").endDate;
+        request_range_span.innerHTML = request_start_momentObject.format('D MMMM YYYY HH:mm') + ' - ' + request_end_momentObject.format('D MMMM YYYY HH:mm');
     };
 
     request_location_select.onchange = function () {
-        $(weather_request_form).submit();
+        weather_request_form_submit();
     };
 
-    $(request_range_picker).on("apply.daterangepicker", function () {
+    jQuery(request_range_picker).on("apply.daterangepicker", function () {
         make_request_range_picker_span();
 
-        $(weather_request_form).submit();
+        weather_request_form_submit();
     });
 
 
     /* Actions on page load */
     var start_time = moment().subtract(3, 'days');
     var end_time = moment();
-    $.ajax({
+    jQuery.ajax({
         url: entrypoints.settingsData,
         contentType: "text/plain",
         success: function (settingsObject) {
             var settingsMap = settingsObject["content"]["settings"];
             var minstart = moment().subtract(settingsMap["max-depth"], 'hours');
-            $(request_range_picker).data('daterangepicker').minDate = minstart;
+            jQuery(request_range_picker).data('daterangepicker').minDate = minstart;
             contactInfoContainer.appendChild(makeContactLink(settingsMap["email"]));
         }
     });
 
-    $(request_range_picker).data('daterangepicker').setStartDate(start_time);
-    $(request_range_picker).data('daterangepicker').setEndDate(end_time);
+    jQuery(request_range_picker).data('daterangepicker').setStartDate(start_time);
+    jQuery(request_range_picker).data('daterangepicker').setEndDate(end_time);
     make_request_range_picker_span();
 
     helpers.set_spinner_status(get_weatherdata_spinner, helpers.STATUS.HAND_LEFT);
 
     show_landing();
 
-    var pathName = window.location.pathname;
+    var pathName = decodeURI(window.location.pathname);
 
     var pathNameSplit = pathName.split('/').slice(1);
 
@@ -296,7 +296,7 @@ function main() {
 
             if (foundIndex != -1) {
                 location_list_model.selectedIndex = foundIndex;
-                location_list_model.onchange();
+                request_location_select.onchange();
             } else {
                 showNotFound();
             };
