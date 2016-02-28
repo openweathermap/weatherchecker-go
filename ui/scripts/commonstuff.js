@@ -100,7 +100,7 @@ function makeCitySelectOptions(locationCollection) {
         newOption.setAttribute('lat', entry.latitude)
         newOption.setAttribute('lon', entry.longitude)
 
-        newOption.innerText = entry.name;
+        newOption.textContent = entry.name;
         output.push(newOption);
     };
     return output;

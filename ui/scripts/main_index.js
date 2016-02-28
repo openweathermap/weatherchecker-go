@@ -55,7 +55,7 @@ function makeShim() {
 function makeContactLink(emailaddr) {
     var contactLink = document.createElement('a')
     contactLink.setAttribute('href', "mailto:" + emailaddr)
-    contactLink.innerText = 'Contact us.'
+    contactLink.textContent = 'Contact us.'
 
     return contactLink;
 }
@@ -69,7 +69,7 @@ function makeLocationSelectEntry() {
     entry.setAttribute('disabled', true);
     entry.setAttribute('objectid', "");
     entry.setAttribute('slug', "");
-    entry.innerText = "(select your city)";
+    entry.textContent = "(select your city)";
 
     return entry
 }
@@ -203,7 +203,7 @@ function main() {
         var locoption = location_list_model.options[location_list_model.selectedIndex];
         var locationid = locoption.getAttribute("objectid");
         var locationslug = locoption.getAttribute("slug");
-        var locationName = locoption.innerText;
+        var locationName = locoption.textContent;
         var wtype = "current";
 
         var request_start_momentObject = jQuery(request_range_picker).data("daterangepicker").startDate;

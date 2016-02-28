@@ -84,10 +84,6 @@ type WundergroundCurrentObservationStruct struct {
 	PrecipTodayIn         string                     `json:"precip_today_in"`
 	PrecipTodayMetric     string                     `json:"precip_today_metric"`
 	Icon                  string                     `json:"icon"`
-	IconUrl               string                     `json:"icon_url"`
-	ForecastUrl           string                     `json:"forecast_url"`
-	HistoryUrl            string                     `json:"history_url"`
-	ObUrl                 string                     `json:"ob_url"`
 }
 
 type WundergroundWeatherStruct struct {
@@ -103,6 +99,7 @@ func wundergroundDecode(s string) (data WundergroundWeatherStruct, err error) {
 	return data, err
 }
 
+// WundergroundAdaptCurrentWeather normalizes Weather Underground current response.
 func WundergroundAdaptCurrentWeather(jsonString string) (measurements MeasurementArray, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -118,17 +115,21 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 
 	dt, _ := strconv.ParseInt(data.CurrentObservation.ObservationEpoch, 10, 64)
 
-	humidity_raw := strings.TrimRight(strings.TrimSpace(data.CurrentObservation.RelativeHumidity), "%")
-	pressure_raw := strings.TrimSpace(data.CurrentObservation.PressureMb)
-	precipitation_raw := strings.TrimSpace(data.CurrentObservation.PrecipTodayMetric)
-	temp_raw := data.CurrentObservation.TempC
-	wind_raw := data.CurrentObservation.WindKph
+	if dt == 0 {
+		return nil, common.MalformedResponse
+	}
 
-	humidity, _ := strconv.ParseFloat(humidity_raw, 64)
-	pressure, _ := strconv.ParseFloat(pressure_raw, 64)
-	precipitation, _ := strconv.ParseFloat(precipitation_raw, 64)
-	temp := float64(temp_raw)
-	wind, _ := convertUnits(float64(wind_raw), "kph")
+	humidityRaw := strings.TrimRight(strings.TrimSpace(data.CurrentObservation.RelativeHumidity), "%")
+	pressureRaw := strings.TrimSpace(data.CurrentObservation.PressureMb)
+	precipitationRaw := strings.TrimSpace(data.CurrentObservation.PrecipTodayMetric)
+	tempRaw := data.CurrentObservation.TempC
+	windRaw := data.CurrentObservation.WindKph
+
+	humidity, _ := strconv.ParseFloat(humidityRaw, 64)
+	pressure, _ := strconv.ParseFloat(pressureRaw, 64)
+	precipitation, _ := strconv.ParseFloat(precipitationRaw, 64)
+	temp := float64(tempRaw)
+	wind, _ := convertUnits(float64(windRaw), "kph")
 
 	measurements = append(measurements, MeasurementSchema{Data: Measurement{Humidity: humidity, Precipitation: precipitation, Pressure: pressure, Temp: temp, Wind: wind}, Timestamp: dt})
 
