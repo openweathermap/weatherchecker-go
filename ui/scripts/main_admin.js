@@ -48,15 +48,15 @@ function main() {
     var admin_buttons = [refresh_button, upsert_location_button];
 
     function disable_admin_buttons() {
-        for (var button of admin_buttons) {
+        admin_buttons.forEach(function (button) {
             button.setAttribute("disabled", "");
-        };
+        });
     };
 
     function enable_admin_buttons() {
-        for (var button of admin_buttons) {
+        admin_buttons.forEach(function (button) {
             button.removeAttribute("disabled");
-        };
+        });
     };
 
     function setAdminKey(value) {
@@ -110,13 +110,13 @@ function main() {
         } else {
             inputfields = helpers.create_input_fields(location_update_inputfields);
         }
-        for (var field of inputfields) {
+        inputfields.forEach(function (field) {
             var group = document.createElement("div");
             group.setAttribute("class", "form-group");
 
             group.appendChild(field);
-            inputarea.appendChild(group);
-        };
+            this.appendChild(group);
+        }, inputarea);
 
         var buttonarea = document.createElement('div')
         buttonarea.setAttribute("class", "buttonarea")

@@ -14,7 +14,8 @@ exports.create_input_fields = create_input_fields;
 exports.set_spinner_status = set_spinner_status;
 exports.get_with_spinner_and_callback = get_with_spinner_and_callback;
 exports.logger = logger;
-exports.fieldValueInSelect = fieldValueInSelect;
+exports.valueInSelect = valueInSelect;
+exports.selectOption = selectOption;
 exports.clearChildren = clearChildren;
 exports.quickParseHTML = quickParseHTML;
 
@@ -27,19 +28,24 @@ function quickParseHTML(sourceText) {
 }
 
 function clearChildren(node) {
-    for (var child of Array.from(node.children)) {
+    var nodeChildren = Array.from(node.children);
+
+    nodeChildren.forEach(function (child) {
         node.removeChild(child);
-    };
+    });
 };
 
 function find_closest(x, range) {
-    var closest = range[0];
-    for (var value of range) {
+    var closestIndex = 0;
+    var closest = range[closestIndex];
+
+    range.forEach(function (value, i) {
         if (Math.abs(value - x) < Math.abs(closest - x)) {
+            closestIndex = i;
             closest = value;
         };
-    };
-    var closestIndex = range.indexOf(closest);
+    });
+
     var closestInfo = {
         Closest: closest,
         Index: closestIndex
@@ -50,19 +56,19 @@ function find_closest(x, range) {
 function collectionToMap(objectCollection, keyName) {
     var newMap = new Map;
 
-    for (var entry of objectCollection) {
+    objectCollection.forEach(function (entry) {
         var key = entry[keyName];
         if (key != undefined) {
             newMap[key] = entry;
         };
-    };
+    });
 
     return newMap;
 }
 
 function create_input_fields(inputfields_desc) {
     var input_fields = new Array;
-    for (var inputfield of inputfields_desc) {
+    inputfields_desc.forEach(function (inputfield) {
         var entry = document.createElement('input')
         entry.setAttribute("name", inputfield.Name)
         entry.setAttribute("type", "text")
@@ -71,7 +77,7 @@ function create_input_fields(inputfields_desc) {
         entry.setAttribute("placeholder", inputfield.Placeholder)
 
         input_fields.push(entry);
-    };
+    });
 
     return input_fields
 };
@@ -135,17 +141,27 @@ function get_with_spinner_and_callback(requestUrl, spinnerContainer, callbackFun
     });
 };
 
-function fieldValueInSelect(selectModel, field, value) {
+function valueInSelect(selectModel, field, value) {
     var existIndex = -1;
     var optionList = Array.from(selectModel.childNodes);
-    for (var optionIndex in optionList) {
-        var option = optionList[optionIndex];
+
+    optionList.forEach(function (option, optionIndex) {
         var optionValue = option.getAttribute(field);
-        if (optionValue == value) {
+        if (optionValue == value && existIndex < 0) {
             existIndex = optionIndex;
-            break;
         };
-    };
+    });
 
     return existIndex;
+};
+
+function selectOption(selectModel, field, value) {
+    var foundIndex = valueInSelect(selectModel, field, value);
+
+    var exists = (foundIndex != -1);
+    if (exists) {
+        selectModel.selectedIndex = foundIndex;
+    };
+
+    return exists;
 };

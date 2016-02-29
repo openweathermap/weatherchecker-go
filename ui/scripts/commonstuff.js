@@ -7,10 +7,10 @@ exports.refresh_location_list = refresh_location_list;
 exports.parseOWMhistory = parseOWMhistory;
 
 function make_history_table_data(historyObject, history_entrypoint) {
-    var content = historyObject.data;
+    var content_entries = historyObject.data;
     var values = [];
 
-    for (var history_entry of content) {
+    content_entries.forEach(function (history_entry) {
         var history_entry_flat = {
             "json_link": "<a href='" + history_entrypoint + "?" + "entryid=" + history_entry.objectid + "'>Open</a>",
             "source_id": history_entry.source.name,
@@ -29,7 +29,7 @@ function make_history_table_data(historyObject, history_entrypoint) {
         };
 
         values.push(history_entry_flat);
-    };
+    });
 
     var columns = [{
         data: "source_name",
@@ -59,16 +59,16 @@ function make_history_table_data(historyObject, history_entrypoint) {
         data: "precipitation",
         title: "Precipitation, mm",
         orderable: false
-    }]
+    }];
 
     var tableOpts = {
         order: [
             [1, "desc"],
             [0, "asc"]
         ]
-    }
+    };
 
-    return [values, columns, tableOpts]
+    return [values, columns, tableOpts];
 }
 
 function getlocations(dataObject) {
@@ -76,7 +76,7 @@ function getlocations(dataObject) {
     var location_list = dataObject['content']['locations'];
 
     if (location_list != null) {
-        for (var location_entry of location_list) {
+        location_list.forEach(function (location_entry) {
             var entry = {};
             entry.id = location_entry['objectid'];
             entry.slug = location_entry['slug'];
@@ -84,7 +84,7 @@ function getlocations(dataObject) {
             entry.latitude = location_entry['latitude'];
             entry.longitude = location_entry['longitude'];
             locations.push(entry);
-        };
+        });
     };
 
     return locations;
@@ -93,16 +93,16 @@ function getlocations(dataObject) {
 function makeCitySelectOptions(locationCollection) {
     var output = [];
 
-    for (var entry of locationCollection) {
-        var newOption = document.createElement('option')
-        newOption.setAttribute('objectid', entry.id)
-        newOption.setAttribute('slug', entry.slug)
-        newOption.setAttribute('lat', entry.latitude)
-        newOption.setAttribute('lon', entry.longitude)
+    locationCollection.forEach(function (entry) {
+        var newOption = document.createElement('option');
+        newOption.setAttribute('objectid', entry.id);
+        newOption.setAttribute('slug', entry.slug);
+        newOption.setAttribute('lat', entry.latitude);
+        newOption.setAttribute('lon', entry.longitude);
 
         newOption.textContent = entry.name;
         output.push(newOption);
-    };
+    });
     return output;
 };
 
@@ -110,17 +110,16 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
     helpers.clearChildren(location_list_model);
 
     var dataObject = {};
-    var locationCollection = []
+    var locationCollection = [];
 
     helpers.get_with_spinner_and_callback(entrypoints.locations, spinnerContainer, function (data) {
         dataObject = JSON.parse(data);
 
         locationCollection = getlocations(dataObject);
-        var options = makeCitySelectOptions(locationCollection);
-
-        for (var option of options) {
+        makeCitySelectOptions(locationCollection).forEach(function (option) {
             location_list_model.appendChild(option);
-        };
+        });
+
         var locationMap = helpers.collectionToMap(locationCollection, 'id');
 
         if (callback != undefined) {
@@ -133,34 +132,34 @@ function refresh_location_list(location_list_model, entrypoints, spinnerContaine
 function parseOWMhistory(OWMHistoryObject) {
     var checkerHistory = []
 
-    var historyList = OWMHistoryObject['list']
-    for (var historyEntry of historyList) {
-        var newEntry = {}
-        newEntry['source'] = 'owm_history'
-        newEntry['measurements'] = []
+    OWMHistoryObject['list'].forEach(function (historyEntry) {
+        var newEntry = {};
+        newEntry['source'] = 'owm_history';
+        newEntry['measurements'] = [];
 
-        var measurement = {}
-        measurement['timestamp'] = historyEntry['dt']
+        var measurement = {};
+        measurement['timestamp'] = historyEntry['dt'];
 
-        var measurementData = {}
-        measurementData['temp'] = historyEntry['main']['temp'] - 273.15
-        measurementData['wind_speed'] = historyEntry['wind']['speed']
-        measurementData['humidity'] = historyEntry['main']['humidity']
-        measurementData['pressure'] = historyEntry['main']['pressure']
+        var measurementData = {};
+        measurementData['temp'] = historyEntry['main']['temp'] - 273.15;
+        measurementData['wind_speed'] = historyEntry['wind']['speed'];
+        measurementData['humidity'] = historyEntry['main']['humidity'];
+        measurementData['pressure'] = historyEntry['main']['pressure'];
 
-        measurement['data'] = measurementData
+        measurement['data'] = measurementData;
 
-        newEntry['measurements'].push(measurement)
+        newEntry['measurements'].push(measurement);
 
-        checkerHistory.push(newEntry)
-    }
-    return checkerHistory
+        checkerHistory.push(newEntry);
+    });
+
+    return checkerHistory;
 }
 
 function extractForecast(forecastArray, length) {
     var newForecasts = [];
 
-    for (var forecastEntry of forecastArray) {
+    forecastArray.forEach(function (forecastEntry) {
         var newEntry = {};
 
         var startDate = forecastEntry['request_dt'];
@@ -179,19 +178,19 @@ function extractForecast(forecastArray, length) {
 
         newEntry['measurements'].push(matchedForecast);
 
-        newForecasts.push(newEntry)
-    };
+        newForecasts.push(newEntry);
+    });
 
-    return newForecasts
+    return newForecasts;
 };
 
 function make_timestamplist(historyObject) {
-    var timestamplist = []
+    var timestamplist = [];
 
-    for (var measurement of historyObject['measurements']) {
-        var timestamp = measurement['timestamp']
-        timestamplist.push(timestamp)
-    }
+    historyObject['measurements'].forEach(function (measurement) {
+        var timestamp = measurement['timestamp'];
+        timestamplist.push(timestamp);
+    });
 
-    return timestamplist
+    return timestamplist;
 }

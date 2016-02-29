@@ -1,59 +1,57 @@
 "use strict";
 
-exports.build_weather_chart = build_weather_chart
+exports.buildWeatherChart = buildWeatherChart
 
-function makeProviderObject(content, key) {
-    var providerObject = {}
+function makeProviderMap(content, key) {
+    var providerMap = new Map;
 
-    for (var entry of content) {
-        var provider = entry['source']['prettyname']
+    content.forEach(function (entry) {
+        var provider = entry['source']['prettyname'];
 
-        var measurement = entry['measurements'][0]
+        var measurement = entry['measurements'][0];
         if (measurement == undefined) {
-            continue
-        }
+            return;
+        };
 
-        var dt = Number(measurement['timestamp']) * 1000
-        var data = measurement['data'][key]
+        var dt = Number(measurement['timestamp']) * 1000;
+        var data = measurement['data'][key];
 
-        if (providerObject[provider] == undefined) {
-            providerObject[provider] = []
-        }
+        if (this.get(provider) == undefined) {
+            this.set(provider, []);
+        };
 
-        var dataEntry = [dt, data]
+        var dataEntry = [dt, data];
 
-        providerObject[provider].push(dataEntry)
-    }
+        this.get(provider).push(dataEntry);
+    }, providerMap);
 
-    return providerObject
+    return providerMap;
 }
 
-function makeSeriesObject(providerObject) {
-    var seriesObject = []
+function makeSeriesArray(historyDataObject, key) {
+    var seriesArray = [];
 
-    for (var providerName in providerObject) {
+    makeProviderMap(historyDataObject, key).forEach(function (providerData, providerName) {
         var providerEntry = {
-            name: providerName,
-            data: providerObject[providerName]
-        }
+            data: providerData,
+            name: providerName
+        };
 
-        seriesObject.push(providerEntry)
-    }
+        this.push(providerEntry);
+    }, seriesArray);
 
-    return seriesObject
-}
+    return seriesArray;
+};
 
-function get_weatherchart_data(historyDataObject) {
+function makeWeatherChartData(historyDataObject) {
     if (historyDataObject == undefined) {
-        return []
-    }
-    var series = makeSeriesObject(makeProviderObject(historyDataObject, 'temp'))
+        return [];
+    } else {
+        return makeSeriesArray(historyDataObject, 'temp');
+    };
+};
 
-    return series
-}
-
-function build_weather_chart(containerObject, historyDataObject) {
-    var chart_series = get_weatherchart_data(historyDataObject)
+function buildWeatherChart(containerObject, historyDataObject) {
     jQuery(containerObject).highcharts({
         chart: {
             type: 'spline'
@@ -72,6 +70,6 @@ function build_weather_chart(containerObject, historyDataObject) {
                 text: 'Temperature'
             }
         },
-        series: chart_series
-    })
-}
+        series: makeWeatherChartData(historyDataObject)
+    });
+};

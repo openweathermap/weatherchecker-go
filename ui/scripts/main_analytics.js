@@ -59,7 +59,7 @@ function main() {
         helpers.get_with_spinner_and_callback(historyRequestUrl, null, function (data) {
             var jsonData = JSON.parse(data)
             var checkerHistory = commonstuff.parseOWMhistory(jsonData)
-            charts.build_weather_chart(forecastchart_container, checkerHistory)
+            charts.buildWeatherChart(forecastchart_container, checkerHistory)
         });
     };
 

@@ -131,9 +131,9 @@ function main() {
 
     /* Events */
     function empty_body() {
-        for (var node of Array.from(activeZone)) {
+        Array.from(activeZone).forEach(function (node) {
             helpers.clearChildren(node);
-        };
+        });
     };
 
     function show_landing() {
@@ -192,7 +192,7 @@ function main() {
                 Object.assign(tableInitOpts, history_table_opts);
 
                 jQuery(table).DataTable(tableInitOpts);
-                charts.build_weather_chart(weatherchart_container, content['history']['data']);
+                charts.buildWeatherChart(weatherchart_container, content['history']['data']);
             } else {
                 show_nodata();
             }
@@ -292,10 +292,9 @@ function main() {
 
         refresh_cb = function () {
             refresh_cb_base();
-            var foundIndex = helpers.fieldValueInSelect(location_list_model, "slug", preselectedSlug);
+            var exists = helpers.selectOption(location_list_model, "slug", preselectedSlug);
 
-            if (foundIndex != -1) {
-                location_list_model.selectedIndex = foundIndex;
+            if (exists) {
                 request_location_select.onchange();
             } else {
                 showNotFound();
