@@ -4,6 +4,8 @@ var commonstuff = require("./commonstuff.js");
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
+helpers.polyfill();
+
 function makeLanding() {
     return helpers.quickParseHTML("<div class='jumbotron'><h1>Weather info at your hand</h1><p>Weather Checker lets you compare weather data from different providers.</p><p><a class='btn btn-primary btn-lg' role='button' disabled='true'>Select the city in the box above to start</a></p></div>")
 };

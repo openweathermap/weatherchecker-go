@@ -2,6 +2,8 @@
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
+helpers.polyfill();
+
 function main() {
     var entrypoints = settings.entrypoints;
     var adminKey = "";

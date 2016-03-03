@@ -4,6 +4,8 @@ var commonstuff = require("./commonstuff.js");
 var helpers = require("./helpers.js");
 var settings = require("./settings.js");
 
+helpers.polyfill();
+
 var testingData = settings.testing
 
 function main() {
