@@ -21,6 +21,10 @@ type SourceEntry struct {
 	Keys       Keyring           `json:"keys"`
 }
 
+func (e *SourceEntry) GetSanitizedInfo() map[string]interface{} {
+	return map[string]interface{}{"name": e.Name, "prettyname": e.PrettyName, "urls": e.Urls}
+}
+
 func CreateSources() (sources []SourceEntry) {
 	sources = append(sources, SourceEntry{Name: "owm", PrettyName: "OpenWeatherMap", Urls: map[string]string{"current": `http://api.openweathermap.org/data/2.5/weather?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&units=metric`,
 		"forecast": `http://pro.openweathermap.org/data/2.5/forecast?appid={{.Source.Keys.Key}}&lat={{.Location.Latitude}}&lon={{.Location.Longitude}}&cnt=10&mode=json&units=metric`}, Keys: Keyring{Key: os.Getenv("OWM_KEY")}})

@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-type JsonResponse struct {
+type jsonResponse struct {
 	Status  int         `json:"status"`
 	Message string      `json:"message"`
 	Content interface{} `json:"content"`
@@ -28,12 +28,7 @@ var refreshInterval int
 var maxDepth int
 var email string
 
-var db_instance *MongoDb
-var sources []SourceEntry
-var locations LocationTable
-var history WeatherHistory
-
-func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
+func renderJSON(stuff interface{}, w http.ResponseWriter) {
 	data, _ := json.Marshal(stuff)
 	jsonString := string(data)
 
@@ -43,36 +38,15 @@ func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	fmt.Fprintf(w, jsonString)
 }
 
-func MarshalPrintResponse(status int, message string, content interface{}, w http.ResponseWriter) {
-	MarshalPrintStuff(JsonResponse{Status: status, Message: message, Content: content}, w)
+func renderResponse(status int, message string, content interface{}, w http.ResponseWriter) {
+	renderJSON(jsonResponse{Status: status, Message: message, Content: content}, w)
 }
 
-func PrintLocationEntry(locationEntry LocationEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]LocationEntry{"location_entry": []LocationEntry{locationEntry}}, w)
+func renderLocationEntry(locationEntry LocationEntry, w http.ResponseWriter) {
+	renderResponse(200, "OK", map[string][]LocationEntry{"location_entry": []LocationEntry{locationEntry}}, w)
 }
 
-func PrintHistoryEntry(historyEntry []HistoryDataEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]HistoryDataEntry{"history_entry": historyEntry}, w)
-}
-
-func PrintLocations(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]LocationEntry{"locations": locations.ReadLocations()}, w)
-}
-
-func PrintSources(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]SourceEntry{"sources": sources}, w)
-}
-
-func PrintSanitizedSources(w http.ResponseWriter) {
-	output := make([]map[string]interface{}, len(sources))
-	for i, source := range sources {
-		entry := SanitizeSource(source)
-		output[i] = entry
-	}
-	MarshalPrintResponse(200, "OK", map[string]interface{}{"sources": output}, w)
-}
-
-func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
+func renderStatus(err error, successMessage string, w http.ResponseWriter) {
 	var status int
 	var message string
 
@@ -84,33 +58,46 @@ func PrintStatus(err error, successMessage string, w http.ResponseWriter) {
 		message = successMessage
 	}
 
-	MarshalPrintResponse(status, message, make(map[string]string), w)
+	renderResponse(status, message, make(map[string]string), w)
 }
 
-func NotAllowedForPublic(w http.ResponseWriter, r *http.Request) {
-	PrintStatus(errors.New("This entrypoint has been disabled for public installation of Weather Checker."), "", w)
+func notAllowedForPublic(w http.ResponseWriter, r *http.Request) {
+	renderStatus(errors.New("This entrypoint has been disabled for public installation of Weather Checker."), "", w)
 }
 
-func InvalidApiKey(w http.ResponseWriter, r *http.Request) {
-	PrintStatus(errors.New("Invalid API key."), "", w)
+func invalidAPIKey(w http.ResponseWriter, r *http.Request) {
+	renderStatus(errors.New("Invalid API key."), "", w)
 }
 
-func ValidApiKey(w http.ResponseWriter, r *http.Request) {
-	PrintStatus(nil, "API key valid.", w)
+func validAPIKey(w http.ResponseWriter, r *http.Request) {
+	renderStatus(nil, "API key valid.", w)
 }
 
-func SanitizeSource(source SourceEntry) map[string]interface{} {
-	entry := make(map[string]interface{})
-	entry["name"] = source.Name
-	entry["prettyname"] = source.PrettyName
-	entry["urls"] = source.Urls
-
-	return entry
+type serverActions struct {
+	sources   []SourceEntry
+	locations LocationTable
+	history   WeatherHistory
 }
 
-func MakeMissingParamsList(query_holder url.Values, required_params []string) (missing []string) {
-	for _, entry := range required_params {
-		if query_holder.Get(entry) == "" {
+func (a *serverActions) ReadLocations(w http.ResponseWriter, r *http.Request) {
+	renderResponse(200, "OK", map[string][]LocationEntry{"locations": a.locations.ReadLocations()}, w)
+}
+
+func (a *serverActions) ReadSources(w http.ResponseWriter, r *http.Request) {
+	renderResponse(200, "OK", map[string][]SourceEntry{"sources": a.sources}, w)
+}
+
+func (a *serverActions) ReadSanitizedSources(w http.ResponseWriter, r *http.Request) {
+	output := make([]map[string]interface{}, len(a.sources))
+	for i, source := range a.sources {
+		output[i] = source.GetSanitizedInfo()
+	}
+	renderResponse(200, "OK", map[string]interface{}{"sources": output}, w)
+}
+
+func makeMissingParamsList(queryHolder url.Values, requiredParams []string) (missing []string) {
+	for _, entry := range requiredParams {
+		if queryHolder.Get(entry) == "" {
 			missing = append(missing, entry)
 		}
 	}
@@ -118,97 +105,85 @@ func MakeMissingParamsList(query_holder url.Values, required_params []string) (m
 	return missing
 }
 
-func ReadSources(w http.ResponseWriter, r *http.Request) {
-	PrintSources(w)
-}
+func (a *serverActions) CreateLocation(w http.ResponseWriter, r *http.Request) {
+	queryHolder := r.URL.Query()
 
-func ReadSanitizedSources(w http.ResponseWriter, r *http.Request) {
-	PrintSanitizedSources(w)
-}
-
-func CreateLocation(w http.ResponseWriter, r *http.Request) {
-	query_holder := r.URL.Query()
-
-	missing := MakeMissingParamsList(query_holder, []string{"city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
+	missing := makeMissingParamsList(queryHolder, []string{"city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
 
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
+		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry := locations.CreateLocation(
-			query_holder.Get("city_name"),
-			query_holder.Get("iso_country"),
-			query_holder.Get("country_name"),
-			query_holder.Get("latitude"),
-			query_holder.Get("longitude"))
-		PrintLocationEntry(locationEntry, w)
+		locationEntry := a.locations.CreateLocation(
+			queryHolder.Get("city_name"),
+			queryHolder.Get("iso_country"),
+			queryHolder.Get("country_name"),
+			queryHolder.Get("latitude"),
+			queryHolder.Get("longitude"))
+		renderLocationEntry(locationEntry, w)
 	}
 }
 
-func ReadLocations(w http.ResponseWriter, r *http.Request) {
-	PrintLocations(w)
-}
+func (a *serverActions) UpdateLocation(w http.ResponseWriter, r *http.Request) {
+	queryHolder := r.URL.Query()
 
-func UpdateLocation(w http.ResponseWriter, r *http.Request) {
-	query_holder := r.URL.Query()
-
-	missing := MakeMissingParamsList(query_holder, []string{"location_id", "city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
+	missing := makeMissingParamsList(queryHolder, []string{"location_id", "city_name", "iso_country", "iso_country", "country_name", "latitude", "longitude"})
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
+		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry, _ := locations.UpdateLocation(
-			query_holder.Get("location_id"),
-			query_holder.Get("city_name"),
-			query_holder.Get("iso_country"),
-			query_holder.Get("country_name"),
-			query_holder.Get("latitude"),
-			query_holder.Get("longitude"))
-		PrintLocationEntry(locationEntry, w)
+		locationEntry, _ := a.locations.UpdateLocation(
+			queryHolder.Get("location_id"),
+			queryHolder.Get("city_name"),
+			queryHolder.Get("iso_country"),
+			queryHolder.Get("country_name"),
+			queryHolder.Get("latitude"),
+			queryHolder.Get("longitude"))
+		renderLocationEntry(locationEntry, w)
 	}
 }
 
-func UpsertLocation(w http.ResponseWriter, r *http.Request) {
-	query_holder := r.URL.Query()
+func (a *serverActions) UpsertLocation(w http.ResponseWriter, r *http.Request) {
+	queryHolder := r.URL.Query()
 
-	if len(query_holder.Get("location_id")) == 0 {
-		CreateLocation(w, r)
+	if len(queryHolder.Get("location_id")) == 0 {
+		a.CreateLocation(w, r)
 	} else {
-		UpdateLocation(w, r)
+		a.UpdateLocation(w, r)
 	}
 }
 
-func DeleteLocation(w http.ResponseWriter, r *http.Request) {
+func (a *serverActions) DeleteLocation(w http.ResponseWriter, r *http.Request) {
 	missing := []string{}
 
-	query_holder := r.URL.Query()
+	queryHolder := r.URL.Query()
 
-	MakeMissingParamsList(query_holder, []string{"location_id"})
+	makeMissingParamsList(queryHolder, []string{"location_id"})
 
 	if len(missing) > 0 {
-		MarshalPrintResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
+		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		err := locations.DeleteLocation(query_holder.Get("location_id"))
-		PrintStatus(err, "Location removed successfully.", w)
+		err := a.locations.DeleteLocation(queryHolder.Get("location_id"))
+		renderStatus(err, "Location removed successfully.", w)
 	}
 }
 
-func ClearLocations(w http.ResponseWriter, r *http.Request) {
-	err := locations.Clear()
+func (a *serverActions) ClearLocations(w http.ResponseWriter, r *http.Request) {
+	err := a.locations.Clear()
 
-	PrintStatus(err, "Locations cleared successfully.", w)
+	renderStatus(err, "Locations cleared successfully.", w)
 }
 
-func ReadHistory(w http.ResponseWriter, r *http.Request, sanitize bool) {
-	query_holder := r.URL.Query()
-	entryid := query_holder.Get("entryid")
-	status, _ := strconv.ParseInt(query_holder.Get("status"), 10, 64)
-	source := query_holder.Get("source")
-	wtype := query_holder.Get("wtype")
-	country := query_holder.Get("country")
-	locationid := query_holder.Get("locationid")
-	requestend := query_holder.Get("requestend")
+func (a *serverActions) ReadHistory(w http.ResponseWriter, r *http.Request, sanitize bool) {
+	queryHolder := r.URL.Query()
+	entryid := queryHolder.Get("entryid")
+	status, _ := strconv.ParseInt(queryHolder.Get("status"), 10, 64)
+	source := queryHolder.Get("source")
+	wtype := queryHolder.Get("wtype")
+	country := queryHolder.Get("country")
+	locationid := queryHolder.Get("locationid")
+	requestend := queryHolder.Get("requestend")
 
 	var requeststart string
-	requeststartRaw := query_holder.Get("requeststart")
+	requeststartRaw := queryHolder.Get("requeststart")
 	if sanitize && maxDepth > 0 {
 		requeststartRawInt, _ := strconv.ParseInt(requeststartRaw, 10, 64)
 
@@ -222,70 +197,61 @@ func ReadHistory(w http.ResponseWriter, r *http.Request, sanitize bool) {
 		requeststart = requeststartRaw
 	}
 
-	history_data := history.ReadHistory(entryid, status, source, wtype, country, locationid, requeststart, requestend)
-	history_filters := map[string]string{"entryid": entryid, "status": strconv.FormatInt(status, 10), "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
+	historyData := a.history.ReadHistory(entryid, status, source, wtype, country, locationid, requeststart, requestend)
+	historyFilters := map[string]string{"entryid": entryid, "status": strconv.FormatInt(status, 10), "source": source, "wtype": wtype, "country": country, "locationid": locationid, "requeststart": requeststart, "requestend": requestend}
 
-	output := make([]interface{}, len(history_data))
-	for i, history_entry := range history_data {
+	output := make([]interface{}, len(historyData))
+	for i, historyEntry := range historyData {
 		entry := make(map[string]interface{})
-		entry["objectid"] = history_entry.Id
-		entry["status"] = history_entry.Status
-		entry["location"] = history_entry.Location
-		entry["source"] = SanitizeSource(history_entry.Source)
-		entry["measurements"] = history_entry.Measurements
-		entry["request_time"] = history_entry.RequestTime
-		entry["wtype"] = history_entry.WType
+		entry["objectid"] = historyEntry.Id
+		entry["status"] = historyEntry.Status
+		entry["location"] = historyEntry.Location
+		entry["source"] = historyEntry.Source.GetSanitizedInfo()
+		entry["measurements"] = historyEntry.Measurements
+		entry["request_time"] = historyEntry.RequestTime
+		entry["wtype"] = historyEntry.WType
 
 		if !sanitize {
-			entry["url"] = history_entry.Url
+			entry["url"] = historyEntry.Url
 		}
 		output[i] = entry
 	}
 
-	MarshalPrintResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": output, "filters": history_filters}}, w)
+	renderResponse(200, "OK", map[string]interface{}{"history": map[string]interface{}{"data": output, "filters": historyFilters}}, w)
 }
 
-func ReadFullHistory(w http.ResponseWriter, r *http.Request) {
-	ReadHistory(w, r, false)
+func (a *serverActions) ReadFullHistory(w http.ResponseWriter, r *http.Request) {
+	a.ReadHistory(w, r, false)
 }
 
-func ReadSanitizedHistory(w http.ResponseWriter, r *http.Request) {
-	ReadHistory(w, r, true)
+func (a *serverActions) ReadSanitizedHistory(w http.ResponseWriter, r *http.Request) {
+	a.ReadHistory(w, r, true)
 }
 
-func RefreshHistory(w http.ResponseWriter, r *http.Request) {
-	query_holder := r.URL.Query()
+func (a *serverActions) RefreshHistory(w http.ResponseWriter, r *http.Request) {
+	queryHolder := r.URL.Query()
 
 	var wtypes []string
-	wtype := query_holder.Get("wtype")
+	wtype := queryHolder.Get("wtype")
 
 	if wtype == "" {
 		wtypes = []string{"current", "forecast"}
 	} else if wtype != "current" && wtype != "forecast" && wtype != "" {
-		PrintStatus(errors.New(""), "Invalid wtype specified.", w)
+		renderStatus(errors.New(""), "Invalid wtype specified.", w)
 		return
 	} else {
 		wtypes = []string{wtype}
 	}
 
-	historyEntry := RefreshHistoryCore(sources, wtypes)
-	PrintHistoryEntry(historyEntry, w)
+	historyEntry := PollAll(&a.history, a.locations.ReadLocations(), a.sources, wtypes)
+	renderResponse(200, "OK", map[string][]HistoryDataEntry{"historyEntry": historyEntry}, w)
 }
 
-func RefreshHistoryCore(sources []SourceEntry, wtypes []string) []HistoryDataEntry {
-	locations_query := locations.ReadLocations()
-	historyEntry := PollAll(&history, locations_query, sources, wtypes)
-
-	return historyEntry
+func (a *serverActions) ClearHistory(w http.ResponseWriter, r *http.Request) {
+	renderStatus(a.history.Clear(), "History cleared successfully.", w)
 }
 
-func ClearHistory(w http.ResponseWriter, r *http.Request) {
-	err := history.Clear()
-
-	PrintStatus(err, "History cleared successfully.", w)
-}
-
-func CheckApiKey(w http.ResponseWriter, r *http.Request, adminKey string, cbSuccess, cbFail func(http.ResponseWriter, *http.Request)) {
+func (a *serverActions) CheckAPIKey(w http.ResponseWriter, r *http.Request, adminKey string, cbSuccess, cbFail func(http.ResponseWriter, *http.Request)) {
 	key := r.URL.Query().Get("appid")
 
 	if key == adminKey {
@@ -295,7 +261,7 @@ func CheckApiKey(w http.ResponseWriter, r *http.Request, adminKey string, cbSucc
 	}
 }
 
-func GetSettings() map[string]interface{} {
+func (a *serverActions) GetSettings() map[string]interface{} {
 	settingsMap := map[string]interface{}{}
 
 	settingsMap["mongo"] = mongoDsn
@@ -306,8 +272,12 @@ func GetSettings() map[string]interface{} {
 	return settingsMap
 }
 
-func ReadSettings(w http.ResponseWriter, r *http.Request) {
-	MarshalPrintResponse(200, "OK", map[string]interface{}{"settings": GetSettings()}, w)
+func (a *serverActions) ReadSettings(w http.ResponseWriter, r *http.Request) {
+	renderResponse(200, "OK", map[string]interface{}{"settings": a.GetSettings()}, w)
+}
+
+func startActionInstance(dbConn *MongoDb) *serverActions {
+	return &serverActions{sources: CreateSources(), locations: NewLocationTable(dbConn), history: NewWeatherHistory(dbConn)}
 }
 
 func init() {
@@ -332,18 +302,17 @@ func main() {
 		closedForPublic = true
 	}
 
-	sources = CreateSources()
-	db_instance = Db()
-	locations = NewLocationTable(db_instance)
-	history = NewWeatherHistory(db_instance)
+	var dbConn = Db()
 
 	fmt.Println("Connecting to MongoDB at", mongoDsn)
-	err := db_instance.Connect(mongoDsn)
+	err := dbConn.Connect(mongoDsn)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Database error: %s", err))
 		return
 	}
-	defer db_instance.Disconnect()
+	defer dbConn.Disconnect()
+
+	var actions = startActionInstance(dbConn)
 
 	var sMux = http.NewServeMux()
 
@@ -357,58 +326,58 @@ func main() {
 	const LocationEntrypoint = APIEntrypoint + "/locations"
 	const HistoryEntrypoint = APIEntrypoint + "/history"
 
-	sMux.HandleFunc(SettingsEntrypoint, ReadSettings)
-	sMux.HandleFunc(LocationEntrypoint, ReadLocations)
+	sMux.HandleFunc(SettingsEntrypoint, actions.ReadSettings)
+	sMux.HandleFunc(LocationEntrypoint, actions.ReadLocations)
 	if !closedForPublic {
-		sMux.HandleFunc(HistoryEntrypoint, ReadFullHistory)
-		sMux.HandleFunc(SourcesEntrypoint, ReadSources)
+		sMux.HandleFunc(HistoryEntrypoint, actions.ReadFullHistory)
+		sMux.HandleFunc(SourcesEntrypoint, actions.ReadSources)
 		sMux.HandleFunc(KeyCheckEntrypoint, func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, r.URL.Query().Get("appid"), ValidApiKey, InvalidApiKey)
+			actions.CheckAPIKey(w, r, r.URL.Query().Get("appid"), validAPIKey, invalidAPIKey)
 		})
-		sMux.HandleFunc(HistoryEntrypoint+"/refresh", RefreshHistory)
-		sMux.HandleFunc(LocationEntrypoint+"/add", CreateLocation)
-		sMux.HandleFunc(LocationEntrypoint+"/edit", UpdateLocation)
-		sMux.HandleFunc(LocationEntrypoint+"/upsert", UpsertLocation)
-		sMux.HandleFunc(LocationEntrypoint+"/remove", DeleteLocation)
-		sMux.HandleFunc(LocationEntrypoint+"/clear", ClearLocations)
-		sMux.HandleFunc(HistoryEntrypoint+"/clear", ClearHistory)
+		sMux.HandleFunc(HistoryEntrypoint+"/refresh", actions.RefreshHistory)
+		sMux.HandleFunc(LocationEntrypoint+"/add", actions.CreateLocation)
+		sMux.HandleFunc(LocationEntrypoint+"/edit", actions.UpdateLocation)
+		sMux.HandleFunc(LocationEntrypoint+"/upsert", actions.UpsertLocation)
+		sMux.HandleFunc(LocationEntrypoint+"/remove", actions.DeleteLocation)
+		sMux.HandleFunc(LocationEntrypoint+"/clear", actions.ClearLocations)
+		sMux.HandleFunc(HistoryEntrypoint+"/clear", actions.ClearHistory)
 	} else {
 		sMux.HandleFunc(HistoryEntrypoint, func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, ReadFullHistory, ReadSanitizedHistory)
+			actions.CheckAPIKey(w, r, adminKey, actions.ReadFullHistory, actions.ReadSanitizedHistory)
 		})
 		sMux.HandleFunc(SourcesEntrypoint, func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, ReadSources, ReadSanitizedSources)
+			actions.CheckAPIKey(w, r, adminKey, actions.ReadSources, actions.ReadSanitizedSources)
 		})
 		sMux.HandleFunc(KeyCheckEntrypoint, func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, ValidApiKey, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, validAPIKey, invalidAPIKey)
 		})
 		sMux.HandleFunc(HistoryEntrypoint+"/refresh", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, RefreshHistory, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.RefreshHistory, invalidAPIKey)
 		})
 		sMux.HandleFunc(LocationEntrypoint+"/add", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, CreateLocation, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.CreateLocation, invalidAPIKey)
 		})
 		sMux.HandleFunc(LocationEntrypoint+"/edit", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, UpdateLocation, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.UpdateLocation, invalidAPIKey)
 		})
 		sMux.HandleFunc(LocationEntrypoint+"/upsert", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, UpsertLocation, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.UpsertLocation, invalidAPIKey)
 		})
 		sMux.HandleFunc(LocationEntrypoint+"/remove", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, DeleteLocation, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.DeleteLocation, invalidAPIKey)
 		})
 		sMux.HandleFunc(LocationEntrypoint+"/clear", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, ClearLocations, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.ClearLocations, invalidAPIKey)
 		})
 		sMux.HandleFunc(HistoryEntrypoint+"/clear", func(w http.ResponseWriter, r *http.Request) {
-			CheckApiKey(w, r, adminKey, ClearHistory, InvalidApiKey)
+			actions.CheckAPIKey(w, r, adminKey, actions.ClearHistory, invalidAPIKey)
 		})
 	}
 
 	if refreshInterval > 0 {
 		go func() {
 			for {
-				RefreshHistoryCore(sources, []string{"current", "forecast"})
+				PollAll(&actions.history, actions.locations.ReadLocations(), actions.sources, []string{"current", "forecast"})
 				time.Sleep(time.Duration(refreshInterval) * time.Minute)
 			}
 		}()
