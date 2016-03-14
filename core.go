@@ -1,14 +1,8 @@
-package core
+package main
 
-import (
-	"time"
+import "time"
 
-	"github.com/owm-inc/weatherchecker-go/adapters"
-	"github.com/owm-inc/weatherchecker-go/models"
-	"github.com/owm-inc/weatherchecker-go/util"
-)
-
-func CreateHistoryDataEntry(location models.LocationEntry, source models.SourceEntry, measurements adapters.MeasurementArray, wtype string, url string, err error) (entry models.HistoryDataEntry) {
+func CreateHistoryDataEntry(location LocationEntry, source SourceEntry, measurements MeasurementArray, wtype string, url string, err error) (entry HistoryDataEntry) {
 	var status int64
 	var message string
 	if err != nil {
@@ -18,7 +12,7 @@ func CreateHistoryDataEntry(location models.LocationEntry, source models.SourceE
 		status = 200
 		message = "OK"
 	}
-	entry = models.MakeHistoryDataEntry()
+	entry = MakeHistoryDataEntry()
 	entry.Status = status
 	entry.Message = message
 	entry.Location = location
@@ -31,22 +25,22 @@ func CreateHistoryDataEntry(location models.LocationEntry, source models.SourceE
 }
 
 // StatSource polls single provider for data on specified location and wtype.
-func StatSource(location models.LocationEntry, source models.SourceEntry, wtype string) (entry models.HistoryDataEntry) {
+func StatSource(location LocationEntry, source SourceEntry, wtype string) (entry HistoryDataEntry) {
 	var err error
 	var url string
 	var raw string
-	measurements := make(adapters.MeasurementArray, 0)
+	measurements := make(MeasurementArray, 0)
 
-	adaptFunc, adaptFuncLookupErr := adapters.GetAdaptFunc(source.Name, wtype)
+	adaptFunc, adaptFuncLookupErr := GetAdaptFunc(source.Name, wtype)
 
 	if adaptFuncLookupErr == nil {
-		url = util.MakeURL(source.Urls[wtype], models.UrlData{Source: source, Location: location})
+		url = MakeURL(source.Urls[wtype], UrlData{Source: source, Location: location})
 
 		var downloadErr error
-		raw, downloadErr = util.Download(url)
+		raw, downloadErr = Download(url)
 
 		if downloadErr != nil {
-			measurements = adapters.AdaptStub(raw)
+			measurements = AdaptStub(raw)
 			err = downloadErr
 		} else {
 			var adaptErr error
@@ -64,10 +58,10 @@ func StatSource(location models.LocationEntry, source models.SourceEntry, wtype 
 	return entry
 }
 
-func PollAll(h *models.WeatherHistory, locations []models.LocationEntry, sources []models.SourceEntry, wtypes []string) (dataset []models.HistoryDataEntry) {
+func PollAll(h *WeatherHistory, locations []LocationEntry, sources []SourceEntry, wtypes []string) (dataset []HistoryDataEntry) {
 	dt := time.Now().Unix()
 
-	dataChan := make(chan models.HistoryDataEntry, 9999)
+	dataChan := make(chan HistoryDataEntry, 9999)
 	doneChan := make(chan struct{})
 
 	go func() {

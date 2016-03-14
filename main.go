@@ -18,10 +18,6 @@ import (
 
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
-
-	"github.com/owm-inc/weatherchecker-go/core"
-	"github.com/owm-inc/weatherchecker-go/db"
-	"github.com/owm-inc/weatherchecker-go/models"
 )
 
 type JsonResponse struct {
@@ -30,16 +26,16 @@ type JsonResponse struct {
 	Content interface{} `json:"content"`
 }
 
-var sources = models.CreateSources()
+var sources = CreateSources()
 
 var mongoDsn string
 var refreshInterval int
 var maxDepth int
 var email string
 
-var db_instance = db.Db()
-var locations = models.NewLocationTable(db_instance)
-var history = models.NewWeatherHistory(db_instance)
+var db_instance = Db()
+var locations = NewLocationTable(db_instance)
+var history = NewWeatherHistory(db_instance)
 
 func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	data, _ := json.Marshal(stuff)
@@ -55,20 +51,20 @@ func MarshalPrintResponse(status int, message string, content interface{}, w htt
 	MarshalPrintStuff(JsonResponse{Status: status, Message: message, Content: content}, w)
 }
 
-func PrintLocationEntry(locationEntry models.LocationEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]models.LocationEntry{"location_entry": []models.LocationEntry{locationEntry}}, w)
+func PrintLocationEntry(locationEntry LocationEntry, w http.ResponseWriter) {
+	MarshalPrintResponse(200, "OK", map[string][]LocationEntry{"location_entry": []LocationEntry{locationEntry}}, w)
 }
 
-func PrintHistoryEntry(historyEntry []models.HistoryDataEntry, w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]models.HistoryDataEntry{"history_entry": historyEntry}, w)
+func PrintHistoryEntry(historyEntry []HistoryDataEntry, w http.ResponseWriter) {
+	MarshalPrintResponse(200, "OK", map[string][]HistoryDataEntry{"history_entry": historyEntry}, w)
 }
 
 func PrintLocations(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]models.LocationEntry{"locations": locations.ReadLocations()}, w)
+	MarshalPrintResponse(200, "OK", map[string][]LocationEntry{"locations": locations.ReadLocations()}, w)
 }
 
 func PrintSources(w http.ResponseWriter) {
-	MarshalPrintResponse(200, "OK", map[string][]models.SourceEntry{"sources": sources}, w)
+	MarshalPrintResponse(200, "OK", map[string][]SourceEntry{"sources": sources}, w)
 }
 
 func PrintSanitizedSources(w http.ResponseWriter) {
@@ -107,7 +103,7 @@ func ValidApiKey(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintStatus(nil, "API key valid.", w)
 }
 
-func SanitizeSource(source models.SourceEntry) map[string]interface{} {
+func SanitizeSource(source SourceEntry) map[string]interface{} {
 	entry := make(map[string]interface{})
 	entry["name"] = source.Name
 	entry["prettyname"] = source.PrettyName
@@ -280,9 +276,9 @@ func RefreshHistory(c web.C, w http.ResponseWriter, r *http.Request) {
 	PrintHistoryEntry(historyEntry, w)
 }
 
-func RefreshHistoryCore(sources []models.SourceEntry, wtypes []string) []models.HistoryDataEntry {
+func RefreshHistoryCore(sources []SourceEntry, wtypes []string) []HistoryDataEntry {
 	locations_query := locations.ReadLocations()
-	historyEntry := core.PollAll(&history, locations_query, sources, wtypes)
+	historyEntry := PollAll(&history, locations_query, sources, wtypes)
 
 	return historyEntry
 }

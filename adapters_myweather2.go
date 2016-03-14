@@ -1,12 +1,10 @@
-package adapters
+package main
 
 import (
 	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type Myweather2WindInfo struct {
@@ -40,7 +38,7 @@ func Myweather2AdaptCurrentWeather(jsonString string) (measurements MeasurementA
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = common.AdapterPanicErr
+			err = AdapterPanicErr
 		}
 	}()
 	data, decodeErr := myweather2Decode(jsonString)

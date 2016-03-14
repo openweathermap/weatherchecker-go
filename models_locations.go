@@ -1,13 +1,10 @@
-package models
+package main
 
 import (
 	"strconv"
 
 	"github.com/skybon/semaphore"
 	"gopkg.in/mgo.v2/bson"
-
-	"github.com/owm-inc/weatherchecker-go/db"
-	"github.com/owm-inc/weatherchecker-go/util"
 )
 
 // LocationEntryBase represents the key fields of LocationEntry.
@@ -35,7 +32,7 @@ func NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude str
 
 // LocationTable is a structure that acts as an interface between DB collection and Golang logic.
 type LocationTable struct {
-	Database   *db.MongoDb
+	Database   *MongoDb
 	Collection string
 	semaphore  semaphore.Semaphore
 }
@@ -45,9 +42,9 @@ func (c *LocationTable) makeUniqueSlug(entry LocationEntry) string {
 	for i := 0; ; i++ {
 		var newSlug string
 		if i == 0 {
-			newSlug = util.MakeSlug(entry.CityName)
+			newSlug = MakeSlug(entry.CityName)
 		} else {
-			newSlug = util.MakeSlug(entry.CityName + "_" + strconv.FormatInt(int64(i), 64))
+			newSlug = MakeSlug(entry.CityName + "_" + strconv.FormatInt(int64(i), 64))
 		}
 
 		var existingSlugs []LocationEntry
@@ -93,7 +90,7 @@ func (c *LocationTable) ReadLocations() []LocationEntry {
 // UpdateLocation modifies location entry based on input parameters.
 func (c *LocationTable) UpdateLocation(locationID, cityName, isoCountry, countryName, latitude, longitude string) (entry LocationEntry, status error) {
 	c.semaphore.Exec(func() {
-		b, idParseErr := db.GetObjectIDFromString(locationID)
+		b, idParseErr := GetObjectIDFromString(locationID)
 
 		var err error
 		var newEntry LocationEntry
@@ -116,7 +113,7 @@ func (c *LocationTable) UpdateLocation(locationID, cityName, isoCountry, country
 func (c *LocationTable) DeleteLocation(locationID string) (status error) {
 	c.semaphore.Exec(func() {
 		var err error
-		b, idParseErr := db.GetObjectIDFromString(locationID)
+		b, idParseErr := GetObjectIDFromString(locationID)
 
 		if idParseErr != nil {
 			err = idParseErr
@@ -137,6 +134,6 @@ func (c *LocationTable) Clear() (status error) {
 }
 
 // NewLocationTable creates a new instance of LocationTable.
-func NewLocationTable(dbInstance *db.MongoDb) LocationTable {
+func NewLocationTable(dbInstance *MongoDb) LocationTable {
 	return LocationTable{Database: dbInstance, Collection: "Locations", semaphore: semaphore.MakeSemaphore(1)}
 }

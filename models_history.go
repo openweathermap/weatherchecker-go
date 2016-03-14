@@ -1,10 +1,8 @@
-package models
+package main
 
 import (
 	"strconv"
 
-	"github.com/owm-inc/weatherchecker-go/adapters"
-	"github.com/owm-inc/weatherchecker-go/db"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -13,7 +11,7 @@ type HistoryDataEntryBase struct {
 	Message      string
 	Location     LocationEntry
 	Source       SourceEntry
-	Measurements adapters.MeasurementArray
+	Measurements MeasurementArray
 	RequestTime  int64
 	WType        string
 	Url          string
@@ -31,7 +29,7 @@ func MakeHistoryDataEntry() HistoryDataEntry {
 }
 
 type WeatherHistory struct {
-	Database   *db.MongoDb
+	Database   *MongoDb
 	Collection string
 }
 
@@ -43,7 +41,7 @@ func (h *WeatherHistory) ReadHistory(entryid string, status int64, source string
 	result = []HistoryDataEntry{}
 	query := make(map[string]interface{})
 	if entryid != "" {
-		query["_id"], _ = db.GetObjectIDFromString(entryid)
+		query["_id"], _ = GetObjectIDFromString(entryid)
 	} else {
 		if status != 0 {
 			query["status"] = status
@@ -58,7 +56,7 @@ func (h *WeatherHistory) ReadHistory(entryid string, status int64, source string
 			query["location.iso_country"] = country
 		}
 		if locationid != "" {
-			query["location._id"], _ = db.GetObjectIDFromString(locationid)
+			query["location._id"], _ = GetObjectIDFromString(locationid)
 		}
 		if requeststart != "" || requestend != "" {
 			requestquery := make(map[string]int64)
@@ -82,7 +80,7 @@ func (this *WeatherHistory) Clear() (err error) {
 	return err
 }
 
-func NewWeatherHistory(db_instance *db.MongoDb) (history WeatherHistory) {
+func NewWeatherHistory(db_instance *MongoDb) (history WeatherHistory) {
 	history = WeatherHistory{Database: db_instance, Collection: "WeatherHistory"}
 
 	return history

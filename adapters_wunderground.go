@@ -1,11 +1,9 @@
-package adapters
+package main
 
 import (
 	"encoding/json"
 	"strconv"
 	"strings"
-
-	"github.com/owm-inc/weatherchecker-go/common"
 )
 
 type WundergroundResponseStruct struct {
@@ -104,7 +102,7 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = common.AdapterPanicErr
+			err = AdapterPanicErr
 		}
 	}()
 	data, decodeErr := wundergroundDecode(jsonString)
@@ -116,7 +114,7 @@ func WundergroundAdaptCurrentWeather(jsonString string) (measurements Measuremen
 	dt, _ := strconv.ParseInt(data.CurrentObservation.ObservationEpoch, 10, 64)
 
 	if dt == 0 {
-		return nil, common.MalformedResponse
+		return nil, MalformedResponse
 	}
 
 	humidityRaw := strings.TrimRight(strings.TrimSpace(data.CurrentObservation.RelativeHumidity), "%")

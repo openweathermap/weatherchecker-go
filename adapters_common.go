@@ -1,9 +1,6 @@
-package adapters
+package main
 
-import (
-	"github.com/owm-inc/weatherchecker-go/common"
-	"github.com/skybon/semaphore"
-)
+import "github.com/skybon/semaphore"
 
 // Measurement represents the data extracted from provider data.
 type Measurement struct {
@@ -54,6 +51,7 @@ func (c *AdapterCollection) Retrieve(source, wt string) (adaptFunc func(string) 
 			}
 		}
 	})
+
 	return adaptFunc
 }
 
@@ -75,7 +73,7 @@ func GetAdaptFunc(sourceName string, wtypeName string) (adaptFunc func(string) (
 	adaptFunc = fnColl.Retrieve(sourceName, wtypeName)
 
 	if adaptFunc == nil {
-		err = common.NoAdaptFunc
+		err = NoAdaptFunc
 	}
 
 	return adaptFunc, err

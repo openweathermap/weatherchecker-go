@@ -1,10 +1,6 @@
-package adapters
+package main
 
-import (
-	"encoding/json"
-
-	"github.com/owm-inc/weatherchecker-go/common"
-)
+import "encoding/json"
 
 type ForecastioWeatherBase struct {
 	Time              int     `json:"time"`
@@ -84,7 +80,7 @@ func ForecastioAdaptCurrentWeather(jsonString string) (measurements MeasurementA
 	defer func() {
 		if r := recover(); r != nil {
 			measurements = AdaptStub(jsonString)
-			err = common.AdapterPanicErr
+			err = AdapterPanicErr
 		}
 	}()
 	data, decodeErr := forecastioDecode(jsonString)
