@@ -26,16 +26,15 @@ type JsonResponse struct {
 	Content interface{} `json:"content"`
 }
 
-var sources = CreateSources()
-
 var mongoDsn string
 var refreshInterval int
 var maxDepth int
 var email string
 
-var db_instance = Db()
-var locations = NewLocationTable(db_instance)
-var history = NewWeatherHistory(db_instance)
+var db_instance *MongoDb
+var sources []SourceEntry
+var locations LocationTable
+var history WeatherHistory
 
 func MarshalPrintStuff(stuff interface{}, w http.ResponseWriter) {
 	data, _ := json.Marshal(stuff)
@@ -342,6 +341,11 @@ func main() {
 	if os.Getenv("CLOSED_FOR_PUBLIC") == "1" {
 		closedForPublic = true
 	}
+
+	sources = CreateSources()
+	db_instance = Db()
+	locations = NewLocationTable(db_instance)
+	history = NewWeatherHistory(db_instance)
 
 	fmt.Println("Connecting to MongoDB at", mongoDsn)
 	err := db_instance.Connect(mongoDsn)
