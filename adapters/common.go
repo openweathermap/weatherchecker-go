@@ -1,6 +1,9 @@
 package adapters
 
-import "github.com/owm-inc/weatherchecker-go/common"
+import (
+	"github.com/owm-inc/weatherchecker-go/common"
+	"github.com/skybon/semaphore"
+)
 
 // Measurement represents the data extracted from provider data.
 type Measurement struct {
@@ -28,44 +31,34 @@ func NewMeasurementArray() MeasurementArray {
 func AdaptStub(s string) MeasurementArray { return NewMeasurementArray() }
 
 type AdapterCollection struct {
-	data    map[string](map[string]func(string) (MeasurementArray, error))
-	dataSem chan struct{}
+	data      map[string](map[string]func(string) (MeasurementArray, error))
+	semaphore semaphore.Semaphore
 }
 
 func (c *AdapterCollection) Add(source string, wt string, fn func(string) (MeasurementArray, error)) {
-	<-c.dataSem
-
-	if _, ok := c.data[source]; ok == false {
-		c.data[source] = make(map[string]func(string) (MeasurementArray, error))
-	}
-	c.data[source][wt] = fn
-
-	c.dataSem <- struct{}{}
+	c.semaphore.Exec(func() {
+		if _, ok := c.data[source]; ok == false {
+			c.data[source] = make(map[string]func(string) (MeasurementArray, error))
+		}
+		c.data[source][wt] = fn
+	})
 }
 
 func (c *AdapterCollection) Retrieve(source, wt string) (adaptFunc func(string) (MeasurementArray, error)) {
-	<-c.dataSem
-
-	sourceFuncs, aExists := c.data[source]
-	if aExists == true {
-		storedFunc, bExists := sourceFuncs[wt]
-		if bExists == true {
-			adaptFunc = storedFunc
+	c.semaphore.Exec(func() {
+		sourceFuncs, aExists := c.data[source]
+		if aExists == true {
+			storedFunc, bExists := sourceFuncs[wt]
+			if bExists == true {
+				adaptFunc = storedFunc
+			}
 		}
-	}
-
-	c.dataSem <- struct{}{}
-
+	})
 	return adaptFunc
 }
 
 func MakeAdapterCollection() AdapterCollection {
-	c := AdapterCollection{}
-	c.data = make(map[string](map[string]func(string) (MeasurementArray, error)))
-	c.dataSem = make(chan struct{}, 1)
-	c.dataSem <- struct{}{}
-
-	return c
+	return AdapterCollection{data: make(map[string](map[string]func(string) (MeasurementArray, error))), semaphore: semaphore.MakeSemaphore(1)}
 }
 
 func GetAdaptFunc(sourceName string, wtypeName string) (adaptFunc func(string) (MeasurementArray, error), err error) {

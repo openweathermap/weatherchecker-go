@@ -36,10 +36,3 @@ func Download(url string) (data string, err error) {
 func MakeSlug(title string) string {
 	return strings.ToLower(strings.Replace(title, " ", "_", -1))
 }
-
-// SemaphoreExec executes function with semaphore locking.
-func SemaphoreExec(sem chan struct{}, cb func()) {
-	<-sem
-	cb()
-	sem <- struct{}{}
-}

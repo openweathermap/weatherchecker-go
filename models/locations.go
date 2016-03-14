@@ -3,6 +3,7 @@ package models
 import (
 	"strconv"
 
+	"github.com/skybon/semaphore"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/owm-inc/weatherchecker-go/db"
@@ -36,7 +37,7 @@ func NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude str
 type LocationTable struct {
 	Database   *db.MongoDb
 	Collection string
-	dataSem    chan struct{}
+	semaphore  semaphore.Semaphore
 }
 
 func (c *LocationTable) makeUniqueSlug(entry LocationEntry) string {
@@ -72,12 +73,9 @@ func (c *LocationTable) createLocationCore(cityName, isoCountry, countryName, la
 
 // CreateLocation creates new location entry and inserts it into database.
 func (c *LocationTable) CreateLocation(cityName, isoCountry, countryName, latitude, longitude string) (entry LocationEntry) {
-	entryChan := make(chan LocationEntry)
-	go util.SemaphoreExec(c.dataSem, func() {
-		entryChan <- c.createLocationCore(cityName, isoCountry, countryName, latitude, longitude)
-	})
+	c.semaphore.Exec(func() { entry = c.createLocationCore(cityName, isoCountry, countryName, latitude, longitude) })
 
-	return <-entryChan
+	return entry
 }
 
 // ReadLocations returns all location entries in the database.
@@ -93,34 +91,30 @@ func (c *LocationTable) ReadLocations() []LocationEntry {
 }
 
 // UpdateLocation modifies location entry based on input parameters.
-func (c *LocationTable) UpdateLocation(locationID, cityName, isoCountry, countryName, latitude, longitude string) (LocationEntry, error) {
-	entryChan := make(chan LocationEntry)
-	statusChan := make(chan error)
-
-	go util.SemaphoreExec(c.dataSem, func() {
+func (c *LocationTable) UpdateLocation(locationID, cityName, isoCountry, countryName, latitude, longitude string) (entry LocationEntry, status error) {
+	c.semaphore.Exec(func() {
 		b, idParseErr := db.GetObjectIDFromString(locationID)
 
 		var err error
-		var entry LocationEntry
+		var newEntry LocationEntry
 
 		if idParseErr != nil {
 			err = idParseErr
 		} else {
-			entry = NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
-			entry.Id = b
-			entry.Slug = c.makeUniqueSlug(entry)
-			err = c.Database.Update(c.Collection, b, entry)
+			newEntry = NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
+			newEntry.Id = b
+			newEntry.Slug = c.makeUniqueSlug(newEntry)
+			err = c.Database.Update(c.Collection, b, newEntry)
 		}
-		entryChan <- entry
-		statusChan <- err
+		entry = newEntry
+		status = err
 	})
-	return <-entryChan, <-statusChan
+	return entry, status
 }
 
 // DeleteLocation removes location from the database.
-func (c *LocationTable) DeleteLocation(locationID string) error {
-	statusChan := make(chan error)
-	go util.SemaphoreExec(c.dataSem, func() {
+func (c *LocationTable) DeleteLocation(locationID string) (status error) {
+	c.semaphore.Exec(func() {
 		var err error
 		b, idParseErr := db.GetObjectIDFromString(locationID)
 
@@ -129,28 +123,20 @@ func (c *LocationTable) DeleteLocation(locationID string) error {
 		} else {
 			err = c.Database.Remove(c.Collection, b)
 		}
-		statusChan <- err
+		status = err
 	})
 
-	return <-statusChan
+	return status
 }
 
 // Clear removes all location entries from the database.
-func (c *LocationTable) Clear() error {
-	statusChan := make(chan error)
-	go util.SemaphoreExec(c.dataSem, func() { statusChan <- c.Database.RemoveAll(c.Collection) })
+func (c *LocationTable) Clear() (status error) {
+	c.semaphore.Exec(func() { status = c.Database.RemoveAll(c.Collection) })
 
-	return <-statusChan
+	return status
 }
 
 // NewLocationTable creates a new instance of LocationTable.
 func NewLocationTable(dbInstance *db.MongoDb) LocationTable {
-	concurrentOps := 1
-	locations := LocationTable{Database: dbInstance, Collection: "Locations", dataSem: make(chan struct{}, concurrentOps)}
-
-	for i := 0; i < concurrentOps; i++ {
-		locations.dataSem <- struct{}{}
-	}
-
-	return locations
+	return LocationTable{Database: dbInstance, Collection: "Locations", semaphore: semaphore.MakeSemaphore(1)}
 }
