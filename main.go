@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/skybon/mgoHelpers"
 )
 
 type jsonResponse struct {
@@ -39,6 +41,9 @@ func renderJSON(stuff interface{}, w http.ResponseWriter) {
 }
 
 func renderResponse(status int, message string, content interface{}, w http.ResponseWriter) {
+	if content == nil {
+		content = map[string]interface{}{}
+	}
 	renderJSON(jsonResponse{Status: status, Message: message, Content: content}, w)
 }
 
@@ -61,6 +66,10 @@ func renderStatus(err error, successMessage string, w http.ResponseWriter) {
 	renderResponse(status, message, make(map[string]string), w)
 }
 
+func renderError(w http.ResponseWriter, err error) {
+	renderResponse(500, err.Error(), nil, w)
+}
+
 func notAllowedForPublic(w http.ResponseWriter, r *http.Request) {
 	renderStatus(errors.New("This entrypoint has been disabled for public installation of Weather Checker."), "", w)
 }
@@ -75,12 +84,17 @@ func validAPIKey(w http.ResponseWriter, r *http.Request) {
 
 type serverActions struct {
 	sources   []SourceEntry
-	locations LocationTable
+	locations *LocationCollection
 	history   WeatherHistory
 }
 
 func (a *serverActions) ReadLocations(w http.ResponseWriter, r *http.Request) {
-	renderResponse(200, "OK", map[string][]LocationEntry{"locations": a.locations.ReadLocations()}, w)
+	locs, err := a.locations.ReadAll()
+	if err != nil {
+		renderError(w, err)
+	} else {
+		renderResponse(200, "OK", map[string][]LocationEntry{"locations": locs}, w)
+	}
 }
 
 func (a *serverActions) ReadSources(w http.ResponseWriter, r *http.Request) {
@@ -113,13 +127,17 @@ func (a *serverActions) CreateLocation(w http.ResponseWriter, r *http.Request) {
 	if len(missing) > 0 {
 		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry := a.locations.CreateLocation(
+		locationEntry, err := a.locations.Create(LocationEntryBase{
 			queryHolder.Get("city_name"),
 			queryHolder.Get("iso_country"),
 			queryHolder.Get("country_name"),
 			queryHolder.Get("latitude"),
-			queryHolder.Get("longitude"))
-		renderLocationEntry(locationEntry, w)
+			queryHolder.Get("longitude")})
+		if err == nil {
+			renderLocationEntry(locationEntry, w)
+		} else {
+			renderError(w, err)
+		}
 	}
 }
 
@@ -130,14 +148,17 @@ func (a *serverActions) UpdateLocation(w http.ResponseWriter, r *http.Request) {
 	if len(missing) > 0 {
 		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		locationEntry, _ := a.locations.UpdateLocation(
-			queryHolder.Get("location_id"),
-			queryHolder.Get("city_name"),
-			queryHolder.Get("iso_country"),
-			queryHolder.Get("country_name"),
-			queryHolder.Get("latitude"),
-			queryHolder.Get("longitude"))
-		renderLocationEntry(locationEntry, w)
+		locationEntry, updErr := a.locations.Update(queryHolder.Get("location_id"),
+			LocationEntryBase{queryHolder.Get("city_name"),
+				queryHolder.Get("iso_country"),
+				queryHolder.Get("country_name"),
+				queryHolder.Get("latitude"),
+				queryHolder.Get("longitude")})
+		if updErr != nil {
+			renderError(w, updErr)
+		} else {
+			renderLocationEntry(locationEntry, w)
+		}
 	}
 }
 
@@ -161,13 +182,13 @@ func (a *serverActions) DeleteLocation(w http.ResponseWriter, r *http.Request) {
 	if len(missing) > 0 {
 		renderResponse(500, "The following parameters are missing: "+strings.Join(missing, ", "), make(map[string]string), w)
 	} else {
-		err := a.locations.DeleteLocation(queryHolder.Get("location_id"))
+		err := a.locations.Delete(queryHolder.Get("location_id"))
 		renderStatus(err, "Location removed successfully.", w)
 	}
 }
 
 func (a *serverActions) ClearLocations(w http.ResponseWriter, r *http.Request) {
-	err := a.locations.Clear()
+	err := a.locations.DeleteAll()
 
 	renderStatus(err, "Locations cleared successfully.", w)
 }
@@ -203,7 +224,7 @@ func (a *serverActions) ReadHistory(w http.ResponseWriter, r *http.Request, sani
 	output := make([]interface{}, len(historyData))
 	for i, historyEntry := range historyData {
 		entry := make(map[string]interface{})
-		entry["objectid"] = historyEntry.Id
+		entry["objectid"] = historyEntry.BsonID()
 		entry["status"] = historyEntry.Status
 		entry["location"] = historyEntry.Location
 		entry["source"] = historyEntry.Source.GetSanitizedInfo()
@@ -243,7 +264,14 @@ func (a *serverActions) RefreshHistory(w http.ResponseWriter, r *http.Request) {
 		wtypes = []string{wtype}
 	}
 
-	historyEntry := PollAll(&a.history, a.locations.ReadLocations(), a.sources, wtypes)
+	locs, err := a.locations.ReadAll()
+
+	if err != nil {
+		renderError(w, err)
+		return
+	}
+
+	historyEntry := PollAll(&a.history, locs, a.sources, wtypes)
 	renderResponse(200, "OK", map[string][]HistoryDataEntry{"historyEntry": historyEntry}, w)
 }
 
@@ -276,8 +304,8 @@ func (a *serverActions) ReadSettings(w http.ResponseWriter, r *http.Request) {
 	renderResponse(200, "OK", map[string]interface{}{"settings": a.GetSettings()}, w)
 }
 
-func startActionInstance(dbConn *MongoDb) *serverActions {
-	return &serverActions{sources: CreateSources(), locations: NewLocationTable(dbConn), history: NewWeatherHistory(dbConn)}
+func startActionInstance(dbConn *mgoHelpers.MongoDb) *serverActions {
+	return &serverActions{sources: CreateSources(), locations: NewLocationCollection(dbConn), history: NewWeatherHistory(dbConn)}
 }
 
 func init() {
@@ -302,7 +330,7 @@ func main() {
 		closedForPublic = true
 	}
 
-	var dbConn = Db()
+	var dbConn = mgoHelpers.GetDb()
 
 	fmt.Println("Connecting to MongoDB at", mongoDsn)
 	err := dbConn.Connect(mongoDsn)
@@ -377,8 +405,11 @@ func main() {
 	if refreshInterval > 0 {
 		go func() {
 			for {
-				PollAll(&actions.history, actions.locations.ReadLocations(), actions.sources, []string{"current", "forecast"})
-				time.Sleep(time.Duration(refreshInterval) * time.Minute)
+				locs, locErr := actions.locations.ReadAll()
+				if locErr == nil {
+					PollAll(&actions.history, locs, actions.sources, []string{"current", "forecast"})
+					time.Sleep(time.Duration(refreshInterval) * time.Minute)
+				}
 			}
 		}()
 	}

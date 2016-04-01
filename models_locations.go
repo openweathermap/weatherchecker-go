@@ -3,14 +3,13 @@ package main
 import (
 	"strconv"
 
-	"github.com/skybon/semaphore"
+	"github.com/skybon/mgoHelpers"
 	"gopkg.in/mgo.v2/bson"
 )
 
 // LocationEntryBase represents the key fields of LocationEntry.
 type LocationEntryBase struct {
 	CityName    string `bson:"city_name" json:"city_name"`
-	Slug        string `bson:"slug" json:"slug"`
 	IsoCountry  string `bson:"iso_country" json:"iso_country"`
 	CountryName string `bson:"country_name" json:"country_name"`
 	Latitude    string `bson:"latitude" json:"latitude"`
@@ -19,25 +18,21 @@ type LocationEntryBase struct {
 
 // LocationEntry is the single location that will be queried for by Weather Checker.
 type LocationEntry struct {
-	DbEntryBase       `bson:",inline"`
-	LocationEntryBase `bson:",inline"`
+	mgoHelpers.DbEntryBase `bson:",inline"`
+	LocationEntryBase      `bson:",inline"`
+	Slug                   string `bson:"slug" json:"slug"`
 }
 
 // NewLocationEntry makes a new location entry based on specified parameters.
-func NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude string) LocationEntry {
-	model := LocationEntry{DbEntryBase{Id: bson.NewObjectId()}, LocationEntryBase{CityName: cityName, IsoCountry: isoCountry, CountryName: countryName, Latitude: latitude, Longitude: longitude}}
+func NewLocationEntry(entryBase LocationEntryBase) LocationEntry {
+	var entry = LocationEntry{LocationEntryBase: entryBase}
 
-	return model
+	entry.SetBsonID(bson.NewObjectId())
+
+	return entry
 }
 
-// LocationTable is a structure that acts as an interface between DB collection and Golang logic.
-type LocationTable struct {
-	Database   *MongoDb
-	Collection string
-	semaphore  semaphore.Semaphore
-}
-
-func (c *LocationTable) makeUniqueSlug(entry LocationEntry) string {
+func makeUniqueSlug(c *mgoHelpers.MongoCollection, entry LocationEntry) string {
 	var slug string
 	for i := 0; ; i++ {
 		var newSlug string
@@ -48,7 +43,7 @@ func (c *LocationTable) makeUniqueSlug(entry LocationEntry) string {
 		}
 
 		var existingSlugs []LocationEntry
-		c.Database.Find(c.Collection, map[string]interface{}{"slug": newSlug, "_id": map[string]interface{}{"$ne": entry.Id}}, &existingSlugs)
+		c.Database.Find(c.Collection, map[string]interface{}{"slug": newSlug, "_id": map[string]interface{}{"$ne": entry.BsonID()}}, &existingSlugs)
 
 		if len(existingSlugs) == 0 {
 			slug = newSlug
@@ -59,81 +54,70 @@ func (c *LocationTable) makeUniqueSlug(entry LocationEntry) string {
 	return slug
 }
 
-func (c *LocationTable) createLocationCore(cityName, isoCountry, countryName, latitude, longitude string) LocationEntry {
-	entry := NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
-	slug := c.makeUniqueSlug(entry)
-	entry.Slug = slug
-	c.Database.Insert(c.Collection, entry)
-
-	return entry
+type LocationCollection struct {
+	base *mgoHelpers.MongoCollection
 }
 
-// CreateLocation creates new location entry and inserts it into database.
-func (c *LocationTable) CreateLocation(cityName, isoCountry, countryName, latitude, longitude string) (entry LocationEntry) {
-	c.semaphore.Exec(func() { entry = c.createLocationCore(cityName, isoCountry, countryName, latitude, longitude) })
+func (c *LocationCollection) Create(entryBase LocationEntryBase) (entry LocationEntry, err error) {
+	abstractEntry, dbErr := c.base.Create(entryBase)
 
-	return entry
-}
-
-// ReadLocations returns all location entries in the database.
-func (c *LocationTable) ReadLocations() []LocationEntry {
-	var result []LocationEntry
-	c.Database.FindAll(c.Collection, &result)
-
-	output := make([]LocationEntry, len(result))
-	for i, location := range result {
-		output[i] = location
+	if dbErr != nil {
+		return entry, dbErr
 	}
-	return output
+
+	locEntryP, assertOk := abstractEntry.(*LocationEntry)
+	if !assertOk {
+		return entry, MalformedEntry
+	}
+
+	entry = *locEntryP
+	return entry, nil
 }
 
-// UpdateLocation modifies location entry based on input parameters.
-func (c *LocationTable) UpdateLocation(locationID, cityName, isoCountry, countryName, latitude, longitude string) (entry LocationEntry, status error) {
-	c.semaphore.Exec(func() {
-		b, idParseErr := GetObjectIDFromString(locationID)
+func (c *LocationCollection) Read(entryID string) (entry LocationEntry, exists bool) {
+	exists = c.base.Read(entryID, &entry)
 
-		var err error
-		var newEntry LocationEntry
+	return entry, exists
+}
 
-		if idParseErr != nil {
-			err = idParseErr
-		} else {
-			newEntry = NewLocationEntry(cityName, isoCountry, countryName, latitude, longitude)
-			newEntry.Id = b
-			newEntry.Slug = c.makeUniqueSlug(newEntry)
-			err = c.Database.Update(c.Collection, b, newEntry)
-		}
-		entry = newEntry
-		status = err
+func (c *LocationCollection) ReadAll() (output []LocationEntry, err error) {
+	err = c.base.ReadAll(&output)
+
+	return output, err
+}
+
+func (c *LocationCollection) Update(locationID string, entryBase LocationEntryBase) (LocationEntry, error) {
+	var err error
+
+	abstractEntry, updErr := c.base.Update(locationID, entryBase)
+
+	if updErr != nil {
+		return LocationEntry{}, updErr
+	}
+	entry, matches := abstractEntry.(*LocationEntry)
+
+	if !matches {
+		err = MalformedEntry
+	}
+
+	return *entry, err
+
+}
+
+func (c *LocationCollection) Delete(locationID string) error { return c.base.Delete(locationID) }
+
+func (c *LocationCollection) DeleteAll() error { return c.base.DeleteAll() }
+
+func NewLocationCollection(dbInstance *mgoHelpers.MongoDb) *LocationCollection {
+	var coll LocationCollection
+	coll.base = mgoHelpers.NewMongoCollection(dbInstance, "Locations")
+	coll.base.SetFactoryFunc(func(coll *mgoHelpers.MongoCollection, factoryArgs interface{}) mgoHelpers.MongoEntry {
+		entryBase := factoryArgs.(LocationEntryBase)
+
+		entry := NewLocationEntry(entryBase)
+		entry.Slug = makeUniqueSlug(coll, entry)
+
+		return &entry
 	})
-	return entry, status
-}
-
-// DeleteLocation removes location from the database.
-func (c *LocationTable) DeleteLocation(locationID string) (status error) {
-	c.semaphore.Exec(func() {
-		var err error
-		b, idParseErr := GetObjectIDFromString(locationID)
-
-		if idParseErr != nil {
-			err = idParseErr
-		} else {
-			err = c.Database.Remove(c.Collection, b)
-		}
-		status = err
-	})
-
-	return status
-}
-
-// Clear removes all location entries from the database.
-func (c *LocationTable) Clear() (status error) {
-	c.semaphore.Exec(func() { status = c.Database.RemoveAll(c.Collection) })
-
-	return status
-}
-
-// NewLocationTable creates a new instance of LocationTable.
-func NewLocationTable(dbInstance *MongoDb) LocationTable {
-	return LocationTable{Database: dbInstance, Collection: "Locations", semaphore: semaphore.MakeSemaphore(1)}
+	return &coll
 }

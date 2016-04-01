@@ -19,7 +19,7 @@ func TestWorldweatheronlineAdaptCurrentWeather(t *testing.T) {
 	if len(expectation) != len(result) {
 		err = compErr
 	} else {
-		for i, _ := range expectation {
+		for i := range expectation {
 			if result[i] != expectation[i] {
 				err = compErr
 			}
@@ -45,7 +45,7 @@ func TestWorldweatheronlineAdaptForecast(t *testing.T) {
 	if len(expectation) != len(result) {
 		err = compErr
 	} else {
-		for i, _ := range expectation {
+		for i := range expectation {
 			if result[i] != expectation[i] {
 				err = compErr
 			}

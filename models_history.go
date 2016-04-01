@@ -3,6 +3,8 @@ package main
 import (
 	"strconv"
 
+	"github.com/skybon/mgoHelpers"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -18,18 +20,19 @@ type HistoryDataEntryBase struct {
 }
 
 type HistoryDataEntry struct {
-	DbEntryBase          `bson:",inline"`
-	HistoryDataEntryBase `bson:",inline"`
+	mgoHelpers.DbEntryBase `bson:",inline"`
+	HistoryDataEntryBase   `bson:",inline"`
 }
 
 func MakeHistoryDataEntry() HistoryDataEntry {
-	entry := HistoryDataEntry{DbEntryBase{Id: bson.NewObjectId()}, HistoryDataEntryBase{}}
+	var entry HistoryDataEntry
+	entry.SetBsonID(bson.NewObjectId())
 
 	return entry
 }
 
 type WeatherHistory struct {
-	Database   *MongoDb
+	Database   *mgoHelpers.MongoDb
 	Collection string
 }
 
@@ -41,7 +44,7 @@ func (h *WeatherHistory) ReadHistory(entryid string, status int64, source string
 	result = []HistoryDataEntry{}
 	query := make(map[string]interface{})
 	if entryid != "" {
-		query["_id"], _ = GetObjectIDFromString(entryid)
+		query["_id"], _ = mgoHelpers.GetObjectIDFromString(entryid)
 	} else {
 		if status != 0 {
 			query["status"] = status
@@ -56,7 +59,7 @@ func (h *WeatherHistory) ReadHistory(entryid string, status int64, source string
 			query["location.iso_country"] = country
 		}
 		if locationid != "" {
-			query["location._id"], _ = GetObjectIDFromString(locationid)
+			query["location._id"], _ = mgoHelpers.GetObjectIDFromString(locationid)
 		}
 		if requeststart != "" || requestend != "" {
 			requestquery := make(map[string]int64)
@@ -80,7 +83,7 @@ func (this *WeatherHistory) Clear() (err error) {
 	return err
 }
 
-func NewWeatherHistory(db_instance *MongoDb) (history WeatherHistory) {
+func NewWeatherHistory(db_instance *mgoHelpers.MongoDb) (history WeatherHistory) {
 	history = WeatherHistory{Database: db_instance, Collection: "WeatherHistory"}
 
 	return history
