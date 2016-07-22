@@ -1,5 +1,5 @@
 FROM centurylink/ca-certs
 
-COPY ./bin/app_linux_amd64 /usr/bin/weatherchecker-go
+COPY ./bin/app_linux_amd64 /usr/bin/app
 
-ENTRYPOINT [ "/usr/bin/weatherchecker-go" ]
+ENTRYPOINT [ "/usr/bin/app" ]

@@ -2,6 +2,7 @@ clean:
 	rm -rf ./bin
 	rm -rf ./ui/bundle/* ./.docker/nginx/fs/etc/nginx/html
 generate: clean
+	mkdir -p ui/bundle
 	go generate
 	cp -r ./ui ./.docker/nginx/fs/etc/nginx/html
 compile: generate
