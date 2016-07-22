@@ -1,6 +1,41 @@
 package main
 
-import "github.com/skybon/semaphore"
+import (
+	"errors"
+	"sync"
+)
+
+type WeatherType int
+
+const (
+	WTUnknown WeatherType = iota
+	WTCurrent
+	WTForecast
+)
+
+func (t WeatherType) GetString() (string, error) {
+	switch t {
+	case WTCurrent:
+		return "current", nil
+	case WTForecast:
+		return "forecast", nil
+	default:
+		return "", errors.New("WeatherType unknown")
+	}
+}
+
+func StringToWT(s string) (WeatherType, error) {
+	switch s {
+	case "current":
+		return WTCurrent, nil
+	case "forecast":
+		return WTForecast, nil
+	default:
+		return WTUnknown, errors.New("WeatherType unknown")
+	}
+}
+
+type AdaptFunc func(string) (MeasurementArray, error)
 
 // Measurement represents the data extracted from provider data.
 type Measurement struct {
@@ -20,61 +55,72 @@ type MeasurementSchema struct {
 // MeasurementArray is a collection of provider responses
 type MeasurementArray []MeasurementSchema
 
-func NewMeasurementArray() MeasurementArray {
-	return make(MeasurementArray, 0)
-}
-
 // AdaptStub is an adapter for MeasurementArray constructor
-func AdaptStub(s string) MeasurementArray { return NewMeasurementArray() }
+func AdaptStub(s string) MeasurementArray { return MeasurementArray{} }
 
 type AdapterCollection struct {
-	data      map[string](map[string]func(string) (MeasurementArray, error))
-	semaphore semaphore.Semaphore
+	sync.Mutex
+	data map[string](map[WeatherType]AdaptFunc)
 }
 
-func (c *AdapterCollection) Add(source string, wt string, fn func(string) (MeasurementArray, error)) {
-	c.semaphore.Exec(func() {
+func (c *AdapterCollection) exec(fn func()) {
+	c.Lock()
+	defer c.Unlock()
+
+	fn()
+}
+
+func (c *AdapterCollection) Set(source string, wt WeatherType, fn AdaptFunc) {
+	c.exec(func() {
 		if _, ok := c.data[source]; ok == false {
-			c.data[source] = make(map[string]func(string) (MeasurementArray, error))
+			c.data[source] = map[WeatherType]AdaptFunc{}
 		}
 		c.data[source][wt] = fn
 	})
 }
 
-func (c *AdapterCollection) Retrieve(source, wt string) (adaptFunc func(string) (MeasurementArray, error)) {
-	c.semaphore.Exec(func() {
+func (c *AdapterCollection) Get(source string, wt WeatherType) (AdaptFunc, bool) {
+	var adaptFunc AdaptFunc
+	var exists = false
+	c.exec(func() {
 		sourceFuncs, aExists := c.data[source]
 		if aExists == true {
 			storedFunc, bExists := sourceFuncs[wt]
 			if bExists == true {
 				adaptFunc = storedFunc
+				exists = true
 			}
 		}
 	})
 
-	return adaptFunc
+	return adaptFunc, exists
 }
 
-func MakeAdapterCollection() AdapterCollection {
-	return AdapterCollection{data: make(map[string](map[string]func(string) (MeasurementArray, error))), semaphore: semaphore.MakeSemaphore(1)}
+func MakeAdapterCollection() *AdapterCollection {
+	return &AdapterCollection{data: map[string](map[WeatherType]AdaptFunc){}}
 }
 
-func GetAdaptFunc(sourceName string, wtypeName string) (adaptFunc func(string) (MeasurementArray, error), err error) {
-	fnColl := MakeAdapterCollection()
-	fnColl.Add("owm", "current", OwmAdaptCurrentWeather)
-	fnColl.Add("owm", "forecast", OwmAdaptForecast)
-	fnColl.Add("wunderground", "current", WundergroundAdaptCurrentWeather)
-	fnColl.Add("myweather2", "current", Myweather2AdaptCurrentWeather)
-	fnColl.Add("forecast.io", "current", ForecastioAdaptCurrentWeather)
-	fnColl.Add("forecast.io", "forecast", ForecastioAdaptForecast)
-	fnColl.Add("worldweatheronline", "current", WorldweatheronlineAdaptCurrentWeather)
-	fnColl.Add("worldweatheronline", "forecast", WorldweatheronlineAdaptForecast)
-
-	adaptFunc = fnColl.Retrieve(sourceName, wtypeName)
-
-	if adaptFunc == nil {
-		err = NoAdaptFunc
+func GetAdaptFunc(sourceName string, wtypeName string) (AdaptFunc, error) {
+	var wt, wtErr = StringToWT(wtypeName)
+	if wtErr != nil {
+		return nil, wtErr
 	}
 
-	return adaptFunc, err
+	fnColl := MakeAdapterCollection()
+	fnColl.Set("owm", WTCurrent, OwmAdaptCurrentWeather)
+	fnColl.Set("owm", WTForecast, OwmAdaptForecast)
+	fnColl.Set("wunderground", WTCurrent, WundergroundAdaptCurrentWeather)
+	fnColl.Set("myweather2", WTCurrent, Myweather2AdaptCurrentWeather)
+	fnColl.Set("forecast.io", WTCurrent, ForecastioAdaptCurrentWeather)
+	fnColl.Set("forecast.io", WTForecast, ForecastioAdaptForecast)
+	fnColl.Set("worldweatheronline", WTCurrent, WorldweatheronlineAdaptCurrentWeather)
+	fnColl.Set("worldweatheronline", WTForecast, WorldweatheronlineAdaptForecast)
+
+	var adaptFunc, exists = fnColl.Get(sourceName, wt)
+
+	if !exists {
+		return nil, NoAdaptFunc
+	}
+
+	return adaptFunc, nil
 }
